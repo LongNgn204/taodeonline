@@ -106,8 +106,8 @@ export default function TokenDashboard() {
                             key={range}
                             onClick={() => setDateRange(range)}
                             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${dateRange === range
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
                                 }`}
                         >
                             {range === '7d' ? '7 ngày' : range === '30d' ? '30 ngày' : '90 ngày'}
@@ -220,9 +220,9 @@ export default function TokenDashboard() {
                             <thead>
                                 <tr>
                                     <th>Thời gian</th>
-                                    <th>Provider</th>
-                                    <th>Model</th>
-                                    <th>Endpoint</th>
+                                    <th>Nhà cung cấp</th>
+                                    <th>Mô hình</th>
+                                    <th>API Endpoint</th>
                                     <th>Tokens</th>
                                     <th>Chi phí</th>
                                     <th>Trạng thái</th>
@@ -254,7 +254,7 @@ export default function TokenDashboard() {
                                             ) : (
                                                 <span className="flex items-center gap-1 text-red-600">
                                                     <XCircle className="w-4 h-4" />
-                                                    Error
+                                                    Lỗi
                                                 </span>
                                             )}
                                         </td>

@@ -11,8 +11,7 @@ import {
     Target,
     Users
 } from 'lucide-react';
-import CourseCard from '../components/ai-hub/CourseCard';
-import ResourceCard from '../components/ai-hub/ResourceCard';
+import { CourseCard, ResourceCard } from '../components/ai-hub';
 
 interface Course {
     id: string;
@@ -84,7 +83,7 @@ export default function AIHub() {
                             <Sparkles className="w-8 h-8" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold">Trung tâm AI</h1>
+                            <h1 className="text-3xl font-bold">Trung tâm học AI</h1>
                             <p className="text-white/80">Nâng cao năng lực sử dụng AI trong giảng dạy</p>
                         </div>
                     </div>
@@ -179,8 +178,22 @@ export default function AIHub() {
                                 Thực hành với AI
                             </h3>
                             <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                                Luyện tập viết prompt, kiểm chứng đáp án và tạo câu hỏi chất lượng với các bài tập tương tác
+                                Luyện tập viết prompt, kiểm chứng đáp án và tạo câu hỏi chất lượng.
                             </p>
+                            <div className="grid gap-4 text-left mt-6">
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Prompt mẫu CV 7991 (Nhận biết):</h4>
+                                    <code className="block text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-2 rounded">
+                                        "Tạo 1 câu hỏi trắc nghiệm mức độ Nhận biết về [Chủ đề], yêu cầu học sinh nhận diện [Khái niệm]. 4 đáp án, 1 đúng."
+                                    </code>
+                                </div>
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Prompt mẫu CV 7991 (Vận dụng):</h4>
+                                    <code className="block text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-2 rounded">
+                                        "Tạo 1 bài toán thực tế mức độ Vận dụng, yêu cầu áp dụng [Công thức/Định lý] để giải quyết vấn đề [Tình huống]. Kèm lời giải chi tiết."
+                                    </code>
+                                </div>
+                            </div>
                             <button className="btn-primary inline-flex items-center gap-2">
                                 Bắt đầu thực hành
                                 <ArrowRight className="w-4 h-4" />

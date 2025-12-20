@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Timer, CheckCircle, AlertCircle } from 'lucide-react';
+import { Timer, CheckCircle, AlertCircle, EyeOff } from 'lucide-react';
+import { calculateSubmissionHash } from '../lib/security';
 
 export default function StudentExam() {
     const { code } = useParams();
@@ -12,6 +13,10 @@ export default function StudentExam() {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [submitted, setSubmitted] = useState(false);
 
+    // Security state
+    const [cheatCount, setCheatCount] = useState(0);
+    const [startTime, setStartTime] = useState<number | null>(null);
+
     // Mock questions
     const questions = [
         { id: 'q1', text: 'Thủ đô của Việt Nam là gì?', options: ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng'] },
@@ -19,12 +24,35 @@ export default function StudentExam() {
         { id: 'q3', text: 'Ai là người sáng tạo ra thuyết tương đối?', options: ['Newton', 'Einstein', 'Tesla', 'Edison'] },
     ];
 
+    const progress = Math.round((Object.keys(answers).length / questions.length) * 100);
+
     useEffect(() => {
+        if (started && !startTime) {
+            setStartTime(Date.now());
+        }
+
         if (started && timeLeft > 0 && !submitted) {
             const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
             return () => clearInterval(timer);
         }
-    }, [started, timeLeft, submitted]);
+    }, [started, timeLeft, submitted, startTime]);
+
+    // Anti-cheat: Detect tab switching
+    useEffect(() => {
+        if (!started || submitted) return;
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                setCheatCount(prev => prev + 1);
+                alert('Cảnh báo: Bạn đã rời khỏi màn hình làm bài! Hành động này đã được ghi lại.');
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [started, submitted]);
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -32,8 +60,20 @@ export default function StudentExam() {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (confirm('Bạn có chắc chắn muốn nộp bài?')) {
+            const submissionData = {
+                examCode: code,
+                answers,
+                startTime,
+                endTime: Date.now(),
+                cheatCount
+            };
+
+            // Client-side signing (demo purpose, real security needs backend check)
+            const signature = await calculateSubmissionHash(submissionData);
+            console.log('Submission signed:', signature, submissionData);
+
             setSubmitted(true);
         }
     };
@@ -80,13 +120,31 @@ export default function StudentExam() {
     return (
         <div className="grid gap-6">
             {/* Header / Timer */}
-            <div className="sticky top-20 z-10 flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="font-semibold">Câu hỏi: {Object.keys(answers).length}/{questions.length}</div>
-                <div className={`font-mono text-xl font-bold flex items-center gap-2 ${timeLeft < 300 ? 'text-red-500' : 'text-primary-600'}`}>
-                    <Timer className="w-5 h-5" />
-                    {formatTime(timeLeft)}
+            {/* Header / Timer */}
+            <div className="sticky top-20 z-10 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
+                <div className="flex justify-between items-center">
+                    <div className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                        {cheatCount > 0 && (
+                            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-1" title="Số lần rời màn hình">
+                                <EyeOff className="w-3 h-3" /> {cheatCount}
+                            </span>
+                        )}
+                        Câu hỏi: {Object.keys(answers).length}/{questions.length}
+                    </div>
+                    <div className={`font-mono text-xl font-bold flex items-center gap-2 ${timeLeft < 300 ? 'text-red-500' : 'text-primary-600'}`}>
+                        <Timer className="w-5 h-5" />
+                        {formatTime(timeLeft)}
+                    </div>
+                    <Button onClick={handleSubmit}>Nộp bài</Button>
                 </div>
-                <Button onClick={handleSubmit}>Nộp bài</Button>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div
+                        className="bg-primary-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
             </div>
 
             {/* Questions list */}

@@ -13,6 +13,7 @@ import {
     TableRow,
     TableCell,
     WidthType,
+    SectionType,
 } from 'docx';
 import type { ExamContent, Question } from '@exam-matrix/shared';
 
@@ -208,65 +209,96 @@ function createEssayParagraphs(q: Question, index: number): Paragraph[] {
 /**
  * Export đề thi sang Word document
  */
+
+/**
+ * Export đề thi sang Word document (Chuẩn form thi)
+ */
 export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
-    const sections: Paragraph[] = [];
+    // 1. Header Section (1 Column)
+    // Table 2 columns: Left = Department/School, Right = Exam Info
+    const headerTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({
+                        width: { size: 40, type: WidthType.PERCENTAGE },
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: 'SỞ GD&ĐT ....................', bold: true })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: 'TRƯỜNG THPT ....................', bold: true })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: '__________________', bold: true })], // Separator line
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 200 }
+                            }),
+                        ],
+                    }),
+                    new TableCell({
+                        width: { size: 60, type: WidthType.PERCENTAGE },
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: exam.title.toUpperCase(), bold: true })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: `Môn: ${exam.subject} - Lớp ${exam.grade}`, bold: true })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: `Thời gian làm bài: ${exam.duration} phút`, italics: true })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new TextRun({ text: '(Không kể thời gian phát đề)', italics: true, size: 20 })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                        ],
+                    }),
+                ],
+            }),
+        ],
+    });
 
-    // Header
-    sections.push(
-        new Paragraph({
-            children: [new TextRun({ text: 'TRƯỜNG: ___________________', size: 24 })],
-        })
-    );
+    // Student Info area
+    const studentInfo = new Paragraph({
+        children: [
+            new TextRun({ text: 'Họ và tên thí sinh: .............................................................. ' }),
+            new TextRun({ text: 'Số báo danh: .....................', bold: true }),
+        ],
+        spacing: { before: 200, after: 400 },
+    });
 
-    sections.push(
-        new Paragraph({
-            text: exam.title,
-            heading: HeadingLevel.HEADING_1,
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 400, after: 200 },
-        })
-    );
+    const headerChildren = [headerTable, studentInfo];
 
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({
-                    text: `Môn: ${exam.subject} - Lớp ${exam.grade}`,
-                    bold: true,
-                }),
-            ],
-            alignment: AlignmentType.CENTER,
-        })
-    );
-
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({
-                    text: `Thời gian: ${exam.duration} phút (không kể thời gian phát đề)`,
-                    italics: true,
-                }),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 400 },
-        })
-    );
-
-    // Sections
+    // 2. Questions Section (2 Columns)
+    const questionChildren: Paragraph[] = [];
     let questionIndex = 1;
 
     for (const section of exam.sections) {
-        // Section header
-        sections.push(
+        // Section Header
+        questionChildren.push(
             new Paragraph({
-                text: section.title,
-                heading: HeadingLevel.HEADING_2,
-                spacing: { before: 400, after: 200 },
+                children: [new TextRun({ text: section.title, bold: true, underline: {} })],
+                spacing: { before: 200, after: 200 },
             })
         );
 
         if (section.instructions) {
-            sections.push(
+            questionChildren.push(
                 new Paragraph({
                     children: [new TextRun({ text: section.instructions, italics: true })],
                     spacing: { after: 200 },
@@ -293,25 +325,39 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
                     break;
             }
 
-            sections.push(...questionParagraphs);
+            questionChildren.push(...questionParagraphs);
             questionIndex++;
         }
     }
 
-    // Footer
-    sections.push(
+    // Footer content (End marker)
+    questionChildren.push(
         new Paragraph({
-            text: '--- HẾT ---',
+            text: '----------- HẾT -----------',
             alignment: AlignmentType.CENTER,
-            spacing: { before: 600 },
+            spacing: { before: 400 },
         })
     );
 
-    // Create document
+    // Create document with 2 sections: Header (1 col) and Body (2 cols)
     const doc = new Document({
         sections: [
             {
-                children: sections,
+                properties: {
+                    type: SectionType.CONTINUOUS, // Or NEXT_PAGE if separate, but usually on same page
+                },
+                children: headerChildren,
+            },
+            {
+                properties: {
+                    type: SectionType.CONTINUOUS,
+                    column: {
+                        count: 2,
+                        space: 720, // 0.5 inch spacing
+                        separate: true, // vertical line between columns? optional
+                    },
+                },
+                children: questionChildren,
             },
         ],
     });
@@ -320,6 +366,7 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
     const buffer = await Packer.toBuffer(doc);
     return Buffer.from(buffer);
 }
+
 
 /**
  * Export đáp án và hướng dẫn chấm

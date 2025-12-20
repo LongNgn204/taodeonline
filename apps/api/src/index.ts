@@ -70,9 +70,15 @@ app.use('/question-bank/*', authMiddleware);
 app.route('/question-bank', questionBankRoutes);
 
 // OCR routes
+// OCR routes
 import ocrRoutes from './routes/ocr.js';
 app.use('/ocr/*', authMiddleware);
 app.route('/ocr', ocrRoutes);
+
+// Community routes
+import { communityRoutes } from './routes/community.js';
+app.use('/community/*', authMiddleware);
+app.route('/community', communityRoutes);
 
 // Get current user
 app.get('/me', (c) => {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileSpreadsheet, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -25,75 +25,44 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex">
-            {/* Left side - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-accent-700 p-12 flex-col justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                        <FileSpreadsheet className="w-7 h-7 text-white" />
-                    </div>
-                    <span className="text-xl font-bold text-white">Hệ thống Tạo Đề Thi Nhờ Sử Dụng Trí Tuệ Nhân Tạo</span>
-                </div>
-
-                <div className="space-y-6">
-                    <h1 className="text-4xl font-bold text-white leading-tight">
-                        Tạo đề kiểm tra
-                        <br />
-                        theo Công văn 7991
-                    </h1>
-                    <p className="text-primary-100 text-lg max-w-md">
-                        Công cụ hỗ trợ giáo viên tạo ma trận đề và đề thi theo chuẩn của Bộ GD&ĐT, bám sát
-                        Chương trình GDPT 2018.
-                    </p>
-                </div>
-
-                <div className="flex gap-4">
-                    <div className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm">
-                        ✓ Ma trận chuẩn CV 7991
-                    </div>
-                    <div className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm">
-                        ✓ Export Excel/Word
-                    </div>
-                    <div className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm">
-                        ✓ Hỗ trợ AI
-                    </div>
-                </div>
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black text-white">
+            {/* Background Animations */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/20 blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-900/20 blur-[120px]" />
             </div>
 
-            {/* Right side - Form */}
-            <div className="flex-1 flex items-center justify-center p-8">
-                <div className="w-full max-w-md">
-                    <div className="lg:hidden flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                            <FileSpreadsheet className="w-6 h-6 text-white" />
+            <div className="w-full max-w-md relative z-10 p-8">
+                <div className="text-center mb-8">
+                    <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-105 transition-transform">
+                            <span className="text-white font-bold text-xl">K</span>
                         </div>
-                        <span className="text-lg font-bold">Hệ thống Tạo Đề Thi AI</span>
-                    </div>
+                    </Link>
+                    <h2 className="text-3xl font-display font-bold mb-2">Đăng nhập</h2>
+                    <p className="text-gray-400">Chào mừng bạn quay lại với Kiến Tạo Việt</p>
+                </div>
 
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mb-8">
-                        Chào mừng bạn quay lại! Đăng nhập để tiếp tục.
-                    </p>
-
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {error && (
-                            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                                 {error}
                             </div>
                         )}
 
                         <div>
-                            <label htmlFor="email" className="label">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
                                 Email
                             </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <div className="relative group">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
                                 <input
                                     id="email"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="input pl-10"
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/50 transition-all"
                                     placeholder="teacher@school.edu.vn"
                                     required
                                 />
@@ -101,43 +70,46 @@ export default function Login() {
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="label">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">
                                 Mật khẩu
                             </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
                                 <input
                                     id="password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input pl-10"
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/50 transition-all"
                                     placeholder="••••••••"
                                     required
-                                    minLength={8}
                                 />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={isLoading} className="btn-primary w-full py-3">
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-3 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-500 hover:to-accent-500 text-white font-bold shadow-lg shadow-primary-500/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
                             {isLoading ? (
-                                <div className="spinner" />
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
                                     Đăng nhập
-                                    <ArrowRight className="w-4 h-4" />
+                                    <ArrowRight className="w-5 h-5" />
                                 </>
                             )}
                         </button>
                     </form>
-
-                    <p className="mt-6 text-center text-gray-500 dark:text-gray-400">
-                        Chưa có tài khoản?{' '}
-                        <Link to="/register" className="text-primary-600 hover:underline font-medium">
-                            Đăng ký ngay
-                        </Link>
-                    </p>
                 </div>
+
+                <p className="mt-8 text-center text-gray-500">
+                    Chưa có tài khoản?{' '}
+                    <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                        Đăng ký miễn phí
+                    </Link>
+                </p>
             </div>
         </div>
     );

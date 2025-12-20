@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Download, FileSpreadsheet, FileText, Edit } from 'lucide-react';
+import { ChevronRight, Download, FileSpreadsheet, FileText, Edit, Send, CheckCircle, XCircle, Globe } from 'lucide-react';
 import { api } from '../lib/api';
 import { safeJsonParse } from '@exam-matrix/shared';
+import StatusBadge from '../components/StatusBadge';
 
 interface Exam {
     id: string;
@@ -21,6 +22,7 @@ export default function ExamDetail() {
     const [exam, setExam] = useState<Exam | null>(null);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState<string | null>(null);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
 
     useEffect(() => {
         if (id) fetchExam();
@@ -38,7 +40,23 @@ export default function ExamDetail() {
         }
     }
 
-    async function handleExport(type: 'matrix-xlsx' | 'exam-docx') {
+    async function handleStatusChange(newStatus: string) {
+        if (!confirm(`Bạn có chắc chắn muốn chuyển trạng thái sang "${newStatus}"?`)) return;
+
+        setUpdatingStatus(true);
+        try {
+            const res = await api.put(`/exams/${id}`, { status: newStatus });
+            if (res.ok) {
+                setExam(prev => prev ? { ...prev, status: newStatus } : null);
+            }
+        } catch (e) {
+            console.error('Update status failed', e);
+        } finally {
+            setUpdatingStatus(false);
+        }
+    }
+
+    async function handleExport(type: 'matrix-xlsx' | 'exam-docx' | 'answer-docx') {
         if (!id) return;
         setExporting(type);
 
@@ -93,15 +111,53 @@ export default function ExamDetail() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{exam.title}</h1>
                     <div className="flex items-center gap-3 mt-2">
-                        <span className={`badge ${exam.status === 'final' ? 'badge-success' : 'badge-warning'}`}>
-                            {exam.status === 'final' ? 'Hoàn thành' : 'Nháp'}
-                        </span>
+                        <StatusBadge status={exam.status} />
                         <span className="text-sm text-gray-500">
                             Cập nhật: {new Date(exam.updated_at).toLocaleString('vi-VN')}
                         </span>
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    {/* Workflow Buttons */}
+                    {(exam.status === 'draft' || !exam.status) && (
+                        <button
+                            onClick={() => handleStatusChange('pending')}
+                            disabled={updatingStatus}
+                            className="btn-primary flex items-center gap-2"
+                        >
+                            <Send className="w-4 h-4" /> Gửi duyệt
+                        </button>
+                    )}
+
+                    {exam.status === 'pending' && (
+                        <>
+                            <button
+                                onClick={() => handleStatusChange('approved')}
+                                disabled={updatingStatus}
+                                className="btn-success flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                <CheckCircle className="w-4 h-4" /> Duyệt
+                            </button>
+                            <button
+                                onClick={() => handleStatusChange('rejected')}
+                                disabled={updatingStatus}
+                                className="btn-danger flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+                            >
+                                <XCircle className="w-4 h-4" /> Từ chối
+                            </button>
+                        </>
+                    )}
+
+                    {exam.status === 'approved' && (
+                        <button
+                            onClick={() => handleStatusChange('published')}
+                            disabled={updatingStatus}
+                            className="btn-primary flex items-center gap-2"
+                        >
+                            <Globe className="w-4 h-4" /> Xuất bản
+                        </button>
+                    )}
+
                     <button className="btn-secondary">
                         <Edit className="w-4 h-4" />
                         Chỉnh sửa
@@ -110,7 +166,7 @@ export default function ExamDetail() {
             </div>
 
             {/* Export buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
                     onClick={() => handleExport('matrix-xlsx')}
                     disabled={exporting !== null}

@@ -10,10 +10,10 @@ export default function TechShowcase() {
 
             <div className="container relative mx-auto px-4">
                 <div className="text-center mb-16">
-                    <h2 className="text-primary-400 font-medium mb-2 uppercase tracking-wider">Công nghệ lõi</h2>
-                    <h3 className="font-display text-4xl md:text-5xl font-bold mb-6">RAG Engine & Smart Matrix</h3>
+                    <h2 className="text-primary-400 font-medium mb-2 uppercase tracking-wider">Công nghệ lõi Tiên phong</h2>
+                    <h3 className="font-display text-4xl md:text-5xl font-bold mb-6">Sức mạnh AI & Dữ liệu lớn</h3>
                     <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-                        Không chỉ là sinh từ khóa. Hệ thống hiểu sâu nội dung sách giáo khoa và cấu trúc đề thi để tạo ra câu hỏi chất lượng cao.
+                        Hệ thống mở đầu tiên tại Việt Nam ứng dụng RAG để hiểu sâu sách giáo khoa, hỗ trợ giáo viên soạn đề chuẩn xác hoàn toàn miễn phí.
                     </p>
                 </div>
 
@@ -28,7 +28,7 @@ export default function TechShowcase() {
                             <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-6 text-blue-400">
                                 <Database className="w-6 h-6" />
                             </div>
-                            <h4 className="text-xl font-bold mb-3">1. Knowledge Ingestion</h4>
+                            <h4 className="text-xl font-bold mb-3">1. Nạp dữ liệu kiến thức</h4>
                             <p className="text-gray-400 mb-4">
                                 Hệ thống nạp dữ liệu từ SGK (PDF/DOCX), phân tích ngữ nghĩa và vector hóa kiến thức vào Vector DB.
                             </p>
@@ -57,7 +57,7 @@ export default function TechShowcase() {
                                 <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary-500/30">
                                     <BrainCircuit className="w-8 h-8 text-white" />
                                 </div>
-                                <h4 className="text-2xl font-bold mb-3">2. Contextual Generation</h4>
+                                <h4 className="text-2xl font-bold mb-3">2. Sinh nội dung theo ngữ cảnh</h4>
                                 <p className="text-gray-300 mb-6">
                                     AI truy xuất ngữ cảnh chính xác (Retrieval) và sinh câu hỏi (Generation) dựa trên Bloom Taxonomy.
                                 </p>
@@ -86,9 +86,9 @@ export default function TechShowcase() {
                             <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-6 text-green-400">
                                 <Layers className="w-6 h-6" />
                             </div>
-                            <h4 className="text-xl font-bold mb-3">3. Smart Matrix</h4>
+                            <h4 className="text-xl font-bold mb-3">3. Ma trận thông minh</h4>
                             <p className="text-gray-400 mb-4">
-                                Tự động mapping câu hỏi vào ma trận đặc tả. Cân bằng tỉ lệ NB-TH-VD-VDC một cách hoàn hảo.
+                                Tự động mapping câu hỏi vào ma trận đặc tả. Cân bằng tỉ lệ NB-TH-VD một cách hoàn hảo.
                             </p>
                             <div className="flex gap-2 text-xs font-mono text-gray-500">
                                 <div className="bg-green-500/20 px-2 py-1 rounded text-green-400">NB: 40%</div>

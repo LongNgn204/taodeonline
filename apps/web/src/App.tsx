@@ -1,58 +1,64 @@
 // Chú thích: Main App component với routing
 
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+
 import Layout from './components/Layout';
+import StudentLayout from './components/StudentLayout';
+import { useAuth } from './hooks/useAuth';
+
+// Pages
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
+import Community from './pages/Community';
 import Libraries from './pages/Libraries';
 import LibraryDetail from './pages/LibraryDetail';
 import CreateExam from './pages/CreateExam';
 import DigitizeExam from './pages/DigitizeExam';
-import StudentLayout from './components/StudentLayout';
 import StudentExam from './pages/StudentExam';
 import ExamDetail from './pages/ExamDetail';
+import ExamHistory from './pages/ExamHistory';
 import Settings from './pages/Settings';
 import AIHub from './pages/AIHub';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import TokenDashboard from './pages/TokenDashboard';
-import { useAuth } from './hooks/useAuth';
+
+// New Pages (Phase 15/16)
+import ZaloIntegration from './pages/ZaloIntegration';
+import CameraGrading from './pages/CameraGrading';
+import Gradebook from './pages/Gradebook';
+import Guide7991 from './pages/Guide7991';
 
 function App() {
-    const { user, loading, checkAuth } = useAuth();
-
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <div className="text-center">
-                    <div className="spinner mx-auto mb-4 w-8 h-8 border-primary-500"></div>
-                    <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
-                </div>
-            </div>
-        );
-    }
-
+    const { user } = useAuth();
+    // ...
     return (
         <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/guide-7991" element={<Guide7991 />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
             <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
 
             {/* Protected routes */}
             <Route element={user ? <Layout /> : <Navigate to="/login" replace />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+
+                {/* Community & Extensions */}
+                <Route path="/community" element={<Community />} />
+                <Route path="/zalo-integration" element={<ZaloIntegration />} />
+                <Route path="/grading" element={<CameraGrading />} />
+                <Route path="/gradebook" element={<Gradebook />} />
+
+                {/* Core Features */}
                 <Route path="/libraries" element={<Libraries />} />
                 <Route path="/libraries/:id" element={<LibraryDetail />} />
                 <Route path="/libraries/:id/create-exam" element={<CreateExam />} />
+                <Route path="/create-exam" element={<CreateExam />} />
                 <Route path="/digitize" element={<DigitizeExam />} />
                 <Route path="/exams/:id" element={<ExamDetail />} />
+                <Route path="/history" element={<ExamHistory />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/ai-hub" element={<AIHub />} />
                 <Route path="/exams/:id/analytics" element={<AnalyticsDashboard />} />
