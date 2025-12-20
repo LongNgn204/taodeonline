@@ -1,12 +1,6 @@
-// Chú thích: Settings page - Revamped with BYOK & Dynamic Model Fetching
 import { useState, useEffect } from 'react';
-import { Key, Trash2, Check, Eye, EyeOff, Cpu, Zap, Box, Layers, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
-
-interface AIModel {
-    id: string;
-    displayName: string;
-    providerId: string;
-}
+import { Settings as SettingsIcon, Save, RefreshCw, Eye, EyeOff, Check, Cpu, Zap, Layers, Box, ShieldCheck, Sparkles, Trash2, Globe, Key, Loader2 } from 'lucide-react';
+import { AIModel } from '@exam-matrix/shared';
 
 // Configuration for AI Providers (metadata only)
 const AI_PROVIDERS = [
@@ -19,7 +13,7 @@ const AI_PROVIDERS = [
         icon: Box,
         fetchUrl: 'https://openrouter.ai/api/v1/models',
         headers: (key: string) => ({
-            'Authorization': `Bearer ${key}`,
+            'Authorization': `Bearer ${key} `,
             'HTTP-Referer': window.location.origin,
             'X-Title': 'Kien Tao Viet'
         })
@@ -33,7 +27,7 @@ const AI_PROVIDERS = [
         color: 'from-green-500 to-emerald-600',
         icon: Zap,
         fetchUrl: 'https://api.openai.com/v1/models',
-        headers: (key: string) => ({ 'Authorization': `Bearer ${key}` })
+        headers: (key: string) => ({ 'Authorization': `Bearer ${key} ` })
     },
     {
         id: 'google',
