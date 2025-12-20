@@ -12,20 +12,23 @@ ocr.post('/upload', async (c) => {
     try {
         const body = await c.req.parseBody();
         const file = body['file'];
+        const apiKey = body['apiKey'] as string;
+        const provider = body['provider'] as string;
+        const model = body['model'] as string;
 
         if (!file || !(file instanceof File)) {
             return c.json({ error: 'No file uploaded' }, 400);
         }
 
+        if (!apiKey || !provider || !model) {
+            return c.json({ error: 'Missing AI credentials (apiKey, provider, model)' }, 400);
+        }
+
         const ocrService = new OCRService(c.env);
         const key = await ocrService.uploadToR2(file);
 
-        // In real app, we might trigger an async job here. 
-        // For simple demo, we process immediately (note: Worker has execution time limit)
-        // Ideally: Return key, client polls status. 
-
-        // Mocking the process for now:
-        const extractedText = await ocrService.processImage(key);
+        // Process with AI
+        const extractedText = await ocrService.processImage(key, apiKey, provider, model);
 
         return c.json({
             success: true,

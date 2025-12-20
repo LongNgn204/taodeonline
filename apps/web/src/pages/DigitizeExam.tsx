@@ -24,15 +24,24 @@ export default function DigitizeExam() {
     const handleUpload = async () => {
         if (!file) return;
 
+        // Validation
+        const apiKey = localStorage.getItem('ai_api_key');
+        const provider = localStorage.getItem('ai_provider_id') || 'openai';
+        const model = localStorage.getItem('ai_vision_model') || localStorage.getItem('ai_selected_model') || 'gpt-4o';
+
+        if (!apiKey) {
+            alert('Vui lòng định cấu hình API Key trong Settings trước.');
+            return;
+        }
+
         setIsProcessing(true);
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('apiKey', apiKey);
+        formData.append('provider', provider);
+        formData.append('model', model);
 
         try {
-            // Mock API delay for effect
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            // Real fetch call
-            /*
             const res = await fetch('/api/ocr/upload', {
                 method: 'POST',
                 body: formData,
@@ -40,14 +49,16 @@ export default function DigitizeExam() {
             const data = await res.json();
 
             if (data.success) {
+                // If it's a stringified JSON (often wrapped in ```json ... ```), clean it?
+                // For now, raw output is fine.
                 setResult(data.extractedText);
-            } */
-
-            setResult("ĐỀ THI THỬ TỐT NGHIỆP THPT QUỐC GIA NĂM 2024\nMôn: TOÁN\nThời gian làm bài: 90 phút\n\nCâu 1: Hàm số nào dưới đây đồng biến trên R?\nA. y = x^3 - x\nB. y = x^3 + x\nC. y = x^4 + 1\nD. y = (x+1)/(x-1)\n\n(Đây là kết quả demo OCR từ hệ thống AI)");
+            } else {
+                alert(data.error || 'Lỗi xử lý OCR');
+            }
 
         } catch (error) {
             console.error('Upload failed', error);
-            alert('Upload thất bại');
+            alert('Upload thất bại. Kiểm tra kết nối server.');
         } finally {
             setIsProcessing(false);
         }

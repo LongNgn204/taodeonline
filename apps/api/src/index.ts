@@ -53,7 +53,12 @@ app.route('/libraries', libraryRoutes);
 app.route('/documents', documentRoutes);
 app.route('/exams', examRoutes);
 app.route('/exports', exportRoutes);
+app.route('/exports', exportRoutes);
 app.route('/grading', gradingRoutes);
+
+// Public Exams (Student Portal)
+import publicExams from './routes/public_exams.js';
+app.route('/public/exams', publicExams);
 
 // AI Hub routes (optional auth - some endpoints work without auth)
 app.use('/ai-hub/*', authMiddleware);

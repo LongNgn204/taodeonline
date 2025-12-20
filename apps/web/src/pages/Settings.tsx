@@ -57,6 +57,7 @@ export default function Settings() {
     // Model state
     const [fetchedModels, setFetchedModels] = useState<AIModel[]>([]);
     const [selectedModel, setSelectedModel] = useState('');
+    const [visionModel, setVisionModel] = useState('');
     const [detectedProvider, setDetectedProvider] = useState<any>(null);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
@@ -64,11 +65,13 @@ export default function Settings() {
     useEffect(() => {
         const key = localStorage.getItem('ai_api_key') || '';
         const savedModel = localStorage.getItem('ai_selected_model') || '';
+        const savedVisionModel = localStorage.getItem('ai_vision_model') || '';
         const providerId = localStorage.getItem('ai_provider_id');
 
         setApiKey(key);
         setSavedKey(key);
         setSelectedModel(savedModel);
+        setVisionModel(savedVisionModel);
 
         if (key && providerId) {
             const provider = AI_PROVIDERS.find(p => p.id === providerId);
@@ -129,7 +132,7 @@ export default function Settings() {
             } else {
                 // Fallback for others not implemented yet
                 setSuccessMsg('Đã lưu Key. (Chưa hỗ trợ lấy danh sách model tự động cho provider này)');
-                saveConfig(null); // Save without model list
+                saveConfig(null, null); // Save without model list
                 return;
             }
 
@@ -138,6 +141,7 @@ export default function Settings() {
                 setSuccessMsg(`Đã tìm thấy ${models.length} hình mẫu AI.`);
                 // Auto select first if none selected
                 if (!selectedModel) setSelectedModel(models[0].id);
+                if (!visionModel) setVisionModel(models[0].id);
             } else {
                 setError('Không tìm thấy model nào phù hợp.');
             }
@@ -149,13 +153,15 @@ export default function Settings() {
         }
     };
 
-    const saveConfig = (modelId: string | null) => {
+    const saveConfig = (modelId: string | null, visionModelId: string | null) => {
         localStorage.setItem('ai_api_key', apiKey);
         localStorage.setItem('ai_provider_id', detectedProvider?.id || '');
         if (modelId) localStorage.setItem('ai_selected_model', modelId);
+        if (visionModelId) localStorage.setItem('ai_vision_model', visionModelId);
 
         setSavedKey(apiKey);
         if (modelId) setSelectedModel(modelId);
+        if (visionModelId) setVisionModel(visionModelId);
 
         // Visual confirmation
         if (!successMsg) setSuccessMsg('Đã lưu cấu hình thành công!');
@@ -165,7 +171,7 @@ export default function Settings() {
     const handleAction = async () => {
         if (fetchedModels.length > 0) {
             // If already fetched, just save
-            saveConfig(selectedModel);
+            saveConfig(selectedModel, visionModel);
         } else {
             // Verification flow
             await fetchModels();
@@ -176,10 +182,12 @@ export default function Settings() {
         if (!confirm('Bạn có chắc muốn xóa cấu hình?')) return;
         localStorage.removeItem('ai_api_key');
         localStorage.removeItem('ai_selected_model');
+        localStorage.removeItem('ai_vision_model');
         localStorage.removeItem('ai_provider_id');
         setApiKey('');
         setSavedKey('');
         setSelectedModel('');
+        setVisionModel('');
         setFetchedModels([]);
         setDetectedProvider(null);
     }
@@ -299,68 +307,106 @@ export default function Settings() {
 
                 {/* Right Column: Model Selection */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Zap className="w-5 h-5 text-accent-500" />
-                            {fetchedModels.length > 0 ? 'Chọn Model' : 'Danh sách hỗ trợ'}
-                        </h2>
-                        {fetchedModels.length > 0 && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                            {fetchedModels.length} Models Active
-                        </span>}
-                    </div>
+                    <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-6 animate-fade-in-up">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-accent-500" />
+                                Chọn Model
+                            </h2>
+                            {fetchedModels.length > 0 && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                                {fetchedModels.length} Models Active
+                            </span>}
+                        </div>
 
-                    {fetchedModels.length > 0 ? (
-                        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-2 animate-fade-in-up">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
-                                {fetchedModels.map((model) => (
-                                    <button
-                                        key={model.id}
-                                        onClick={() => setSelectedModel(model.id)}
-                                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${selectedModel === model.id
-                                            ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-500 ring-1 ring-primary-500/50'
-                                            : 'border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10'
-                                            }`}
+                        {fetchedModels.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Text Model */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Model Văn Bản (Text)</label>
+                                    <div className="space-y-2 max-h-[400px] overflow-y-auto p-1 scrollbar-thin">
+                                        {fetchedModels.map((model) => (
+                                            <button
+                                                key={`text-${model.id}`}
+                                                onClick={() => setSelectedModel(model.id)}
+                                                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${selectedModel === model.id
+                                                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-500 ring-1 ring-primary-500/50'
+                                                    : 'border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10'
+                                                    }`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${selectedModel === model.id ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'
+                                                    }`}>
+                                                    {selectedModel === model.id && <div className="w-2 h-2 rounded-full bg-primary-500" />}
+                                                </div>
+                                                <div>
+                                                    <p className={`font-medium text-sm ${selectedModel === model.id ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 dark:text-gray-200'}`}>
+                                                        {model.displayName}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 font-mono mt-0.5">{model.id}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Vision Model */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Model Hình Ảnh (Vision/OCR)</label>
+                                    <div className="space-y-2 max-h-[400px] overflow-y-auto p-1 scrollbar-thin">
+                                        {fetchedModels.map((model) => (
+                                            <button
+                                                key={`vision-${model.id}`}
+                                                onClick={() => setVisionModel(model.id)}
+                                                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${visionModel === model.id
+                                                    ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 ring-1 ring-purple-500/50'
+                                                    : 'border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10'
+                                                    }`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${visionModel === model.id ? 'border-purple-500' : 'border-gray-300 dark:border-gray-600'
+                                                    }`}>
+                                                    {visionModel === model.id && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+                                                </div>
+                                                <div>
+                                                    <p className={`font-medium text-sm ${visionModel === model.id ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-200'}`}>
+                                                        {model.displayName}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 font-mono mt-0.5">{model.id}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                                        * Chọn model hỗ trợ xử lý hình ảnh (vd: gemini-pro-vision, gpt-4o)
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Placeholder
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70 grayscale-[30%] pointer-events-none select-none">
+                                {AI_PROVIDERS.filter(p => p.id === 'google' || p.id === 'openai').map((provider) => (
+                                    <div
+                                        key={provider.id}
+                                        className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-5"
                                     >
-                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${selectedModel === model.id ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'
-                                            }`}>
-                                            {selectedModel === model.id && <div className="w-2 h-2 rounded-full bg-primary-500" />}
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${provider.color} flex items-center justify-center text-white`}>
+                                                <provider.icon className="w-4 h-4" />
+                                            </div>
+                                            <h3 className="font-bold text-gray-900 dark:text-white">{provider.name}</h3>
                                         </div>
-                                        <div>
-                                            <p className={`font-medium text-sm ${selectedModel === model.id ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 dark:text-gray-200'}`}>
-                                                {model.displayName}
-                                            </p>
-                                            <p className="text-xs text-gray-400 font-mono mt-0.5">{model.id}</p>
-                                        </div>
-                                    </button>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            Vui lòng nhập Key bắt đầu bằng <code className="bg-gray-100 dark:bg-white/10 px-1 rounded">{provider.keyPrefix}</code> để tải danh sách models.
+                                        </p>
+                                    </div>
                                 ))}
                             </div>
-                            <div className="p-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
-                                <button onClick={() => saveConfig(selectedModel)} className="btn-primary py-2 px-6">
-                                    Xác nhận chọn Model
-                                </button>
-                            </div>
+                        )}
+
+                        <div className="p-4 border-t border-gray-100 dark:border-white/10 flex justify-end mt-6">
+                            <button onClick={() => saveConfig(selectedModel, visionModel)} className="btn-primary py-2 px-6">
+                                Xác nhận cấu hình
+                            </button>
                         </div>
-                    ) : (
-                        // Placeholder / Static list when no key logic yet
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70 grayscale-[30%] pointer-events-none select-none">
-                            {AI_PROVIDERS.filter(p => p.id === 'google' || p.id === 'openai').map((provider) => (
-                                <div
-                                    key={provider.id}
-                                    className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-5"
-                                >
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${provider.color} flex items-center justify-center text-white`}>
-                                            <provider.icon className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="font-bold text-gray-900 dark:text-white">{provider.name}</h3>
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Vui lòng nhập Key bắt đầu bằng <code className="bg-gray-100 dark:bg-white/10 px-1 rounded">{provider.keyPrefix}</code> để tải danh sách models.
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

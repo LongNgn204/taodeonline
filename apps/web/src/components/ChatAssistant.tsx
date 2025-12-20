@@ -46,8 +46,11 @@ export default function ChatAssistant() {
         setIsLoading(true);
 
         try {
-            // Check for API Key
+            // Check for API Key & Model
             const apiKey = localStorage.getItem('ai_api_key');
+            const provider = localStorage.getItem('ai_provider_id') || 'openai';
+            const model = localStorage.getItem('ai_selected_model') || 'gpt-4o-mini';
+
             if (!apiKey) {
                 // throw new Error('Vui lòng nhập API Key trong phần Cài đặt để sử dụng trợ lý.');
             }
@@ -56,7 +59,7 @@ export default function ChatAssistant() {
             await new Promise(r => setTimeout(r, 1500));
 
             // Context-aware mock response for demo
-            let aiContent = "Tôi đã hiểu yêu cầu của thầy/cô. ";
+            let aiContent = `[${provider.toUpperCase()} / ${model}] `;
             if (input.toLowerCase().includes("ma trận")) {
                 aiContent += "Theo công văn 7991, ma trận đề cần đảm bảo 4 mức độ nhận thức. Thầy/cô nên bắt đầu với tỉ lệ 40% Nhận biết và 30% Thông hiểu.";
             } else if (input.toLowerCase().includes("lỗi") || input.toLowerCase().includes("không được")) {
@@ -146,14 +149,14 @@ export default function ChatAssistant() {
                                 className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                             >
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user'
-                                        ? 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300'
-                                        : 'bg-gradient-to-br from-primary-500/10 to-accent-500/10 text-primary-600 dark:text-primary-400'
+                                    ? 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300'
+                                    : 'bg-gradient-to-br from-primary-500/10 to-accent-500/10 text-primary-600 dark:text-primary-400'
                                     }`}>
                                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                 </div>
                                 <div className={`max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
-                                        ? 'bg-primary-600 text-white rounded-br-none'
-                                        : 'bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-bl-none'
+                                    ? 'bg-primary-600 text-white rounded-br-none'
+                                    : 'bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-bl-none'
                                     }`}>
                                     {msg.content}
                                 </div>

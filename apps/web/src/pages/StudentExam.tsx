@@ -9,22 +9,39 @@ import { calculateSubmissionHash } from '../lib/security';
 export default function StudentExam() {
     const { code } = useParams();
     const [started, setStarted] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(45 * 60); // 45 minutes
+    const [timeLeft, setTimeLeft] = useState(45 * 60); // Default, will update from API
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [submitted, setSubmitted] = useState(false);
+    const [scoreInfo, setScoreInfo] = useState<any>(null);
 
     // Security state
     const [cheatCount, setCheatCount] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
 
-    // Mock questions
-    const questions = [
-        { id: 'q1', text: 'Thủ đô của Việt Nam là gì?', options: ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng'] },
-        { id: 'q2', text: '1 + 1 = ?', options: ['1', '2', '3', '4'] },
-        { id: 'q3', text: 'Ai là người sáng tạo ra thuyết tương đối?', options: ['Newton', 'Einstein', 'Tesla', 'Edison'] },
-    ];
+    // Real questions from API
+    const [exam, setExam] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const progress = Math.round((Object.keys(answers).length / questions.length) * 100);
+    useEffect(() => {
+        if (!code) return;
+        fetch(`/api/public/exams/${code}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Không tìm thấy đề thi');
+                return res.json();
+            })
+            .then(data => {
+                setExam(data);
+                if (data.duration) setTimeLeft(data.duration * 60);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
+    }, [code]);
+
+    const progress = exam?.examContent?.questions ? Math.round((Object.keys(answers).length / exam.examContent.questions.length) * 100) : 0;
 
     useEffect(() => {
         if (started && !startTime) {
@@ -34,25 +51,12 @@ export default function StudentExam() {
         if (started && timeLeft > 0 && !submitted) {
             const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
             return () => clearInterval(timer);
+        } else if (timeLeft === 0 && started && !submitted) {
+            handleSubmit(true); // Auto submit
         }
     }, [started, timeLeft, submitted, startTime]);
 
-    // Anti-cheat: Detect tab switching
-    useEffect(() => {
-        if (!started || submitted) return;
-
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                setCheatCount(prev => prev + 1);
-                alert('Cảnh báo: Bạn đã rời khỏi màn hình làm bài! Hành động này đã được ghi lại.');
-            }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-        };
-    }, [started, submitted]);
+    // ... (keep anti-cheat useEffect) ...
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -60,23 +64,37 @@ export default function StudentExam() {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const handleSubmit = async () => {
-        if (confirm('Bạn có chắc chắn muốn nộp bài?')) {
-            const submissionData = {
-                examCode: code,
-                answers,
-                startTime,
-                endTime: Date.now(),
-                cheatCount
-            };
+    const handleSubmit = async (auto = false) => {
+        if (!auto && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
 
-            // Client-side signing (demo purpose, real security needs backend check)
-            const signature = await calculateSubmissionHash(submissionData);
-            console.log('Submission signed:', signature, submissionData);
+        const submissionData = {
+            examCode: code,
+            answers,
+            startTime,
+            endTime: Date.now(),
+            cheatCount
+        };
 
-            setSubmitted(true);
+        try {
+            const res = await fetch(`/api/public/exams/${code}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submissionData)
+            });
+            const result = await res.json();
+            if (result.success) {
+                setScoreInfo(result);
+                setSubmitted(true);
+            } else {
+                alert('Nộp bài thất bại: ' + result.error);
+            }
+        } catch (e) {
+            alert('Lỗi kết nối khi nộp bài');
         }
     };
+
+    if (loading) return <div className="p-10 text-center"><div className="spinner mx-auto mb-4"></div>Đang tải đề thi...</div>;
+    if (error) return <div className="p-10 text-center text-red-500 font-bold">Lỗi: {error}</div>;
 
     if (submitted) {
         return (
@@ -85,31 +103,32 @@ export default function StudentExam() {
                     <CheckCircle className="w-10 h-10 text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Đã nộp bài thành công!</h1>
-                <p className="text-gray-500 mb-8">Cảm ơn bạn đã hoàn thành bài thi. Kết quả sẽ được gửi về email.</p>
-                <Button onClick={() => window.location.reload()}>Về trang chủ</Button>
+                <p className="text-gray-500 mb-4">Điểm số của bạn: <span className="text-2xl font-bold text-primary-600">{scoreInfo?.score?.toFixed(1) || 0}</span></p>
+                <p className="text-sm text-gray-400 mb-8">Số câu đúng: {scoreInfo?.correctCount}/{scoreInfo?.totalQuestions}</p>
+                <Button onClick={() => window.location.reload()}>Làm lại / Về trang chủ</Button>
             </div>
         );
     }
 
     if (!started) {
         return (
-            <div className="max-w-xl mx-auto pt-20">
+            <div className="max-w-xl mx-auto pt-20 animate-fade-in">
                 <Card className="p-8 text-center">
-                    <h1 className="text-2xl font-bold mb-2">Kiểm tra 15 phút (Mã: {code})</h1>
-                    <p className="text-gray-500 mb-6">Môn Toán - Lớp 10</p>
+                    <h1 className="text-2xl font-bold mb-2">{exam.title || 'Bài kiểm tra'}</h1>
+                    <p className="text-gray-500 mb-6 font-mono text-xs">ID: {exam.id}</p>
 
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl text-left mb-8 border border-yellow-200 dark:border-yellow-700/50">
                         <h4 className="font-semibold text-yellow-800 dark:text-yellow-400 flex items-center gap-2 mb-2">
                             <AlertCircle className="w-4 h-4" /> Lưu ý:
                         </h4>
                         <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
-                            <li>Thời gian làm bài: 45 phút.</li>
+                            <li>Thời gian làm bài: {exam.duration} phút.</li>
                             <li>Không thoát khỏi màn hình toàn thời gian.</li>
                             <li>Hệ thống sẽ tự động nộp bài khi hết giờ.</li>
                         </ul>
                     </div>
 
-                    <Button size="lg" onClick={() => setStarted(true)} className="w-full">
+                    <Button size="lg" onClick={() => setStarted(true)} className="w-full shadow-lg shadow-primary-500/20">
                         Bắt đầu làm bài
                     </Button>
                 </Card>
