@@ -101,7 +101,7 @@ auth.post('/register', async (c) => {
     const token = createJwt(userId, email, jwtSecret);
 
     // Set cookie
-    const cookie = `auth_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${7 * 24 * 60 * 60}`;
+    const cookie = `auth_token=${token}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`;
 
     return c.json(
         {
@@ -148,7 +148,7 @@ auth.post('/login', async (c) => {
     const token = createJwt(user.id, user.email, jwtSecret);
 
     // Set cookie
-    const cookie = `auth_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${7 * 24 * 60 * 60}`;
+    const cookie = `auth_token=${token}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`;
 
     console.info('[auth] login success', { userId: user.id });
 
@@ -167,7 +167,7 @@ auth.post('/login', async (c) => {
 // POST /auth/logout
 auth.post('/logout', (c) => {
     // Clear cookie
-    const cookie = 'auth_token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0';
+    const cookie = 'auth_token=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0';
 
     return c.json({ success: true }, 200, { 'Set-Cookie': cookie });
 });

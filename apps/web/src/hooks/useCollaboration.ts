@@ -41,12 +41,23 @@ export const useCollaboration = (examId: string) => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // Dev: localhost:8787, Prod: exam-matrix-api...
         // For local dev, we might be on port 5173 talking to 8787
-        const apiHost = 'localhost:8787'; // Cần logic dynamic hơn nếu deploy, tạm thời hardcode local
+        // Logic to determine API host
+        let apiHost = 'localhost:8787';
 
-        // Construct the correct URL - Web app is usually separate domain from API in prod
-        // Assuming proxy setup in vite.config or absolute URL
-        // Let's rely on relative path if proxy exists, or absolute if not
-        // Given existing fetch calls use relative '/api', let's assume proxy BUT WebSocket needs full URL
+        // If VITE_API_URL is defined, parse it
+        const envApiUrl = import.meta.env.VITE_API_URL;
+        if (envApiUrl) {
+            try {
+                const url = new URL(envApiUrl);
+                apiHost = url.host;
+            } catch (e) {
+                console.error('Invalid VITE_API_URL', envApiUrl);
+            }
+        } else if (window.location.hostname !== 'localhost') {
+            // Fallback: assume API is on relative path or same domain if not localhost
+            apiHost = window.location.host;
+        }
+
         const wsUrl = `${protocol}//${apiHost}/collab/connect/${examId}`;
 
         console.log('[Collab] Connecting to', wsUrl);
