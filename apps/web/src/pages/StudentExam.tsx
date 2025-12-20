@@ -56,7 +56,22 @@ export default function StudentExam() {
         }
     }, [started, timeLeft, submitted, startTime]);
 
-    // ... (keep anti-cheat useEffect) ...
+    // Anti-cheat: Detect tab switching
+    useEffect(() => {
+        if (!started || submitted) return;
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                setCheatCount(prev => prev + 1);
+                alert('Cảnh báo: Bạn đã rời khỏi màn hình làm bài! Hành động này đã được ghi lại.');
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [started, submitted]);
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -64,8 +79,9 @@ export default function StudentExam() {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const handleSubmit = async (auto = false) => {
-        if (!auto && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
+    const handleSubmit = async (auto: boolean | React.MouseEvent<HTMLButtonElement> = false) => {
+        const isAuto = typeof auto === 'boolean' ? auto : false;
+        if (!isAuto && !confirm('Bạn có chắc chắn muốn nộp bài?')) return;
 
         const submissionData = {
             examCode: code,
@@ -74,6 +90,13 @@ export default function StudentExam() {
             endTime: Date.now(),
             cheatCount
         };
+
+        // Client-side signing (demo purpose)
+        try {
+            await calculateSubmissionHash(submissionData);
+        } catch (e) {
+            console.warn("Signing failed", e);
+        }
 
         try {
             const res = await fetch(`/api/public/exams/${code}/submit`, {
@@ -136,10 +159,10 @@ export default function StudentExam() {
         );
     }
 
+    const questions = exam?.examContent?.questions || [];
+
     return (
         <div className="grid gap-6">
-            {/* Header / Timer */}
-            {/* Header / Timer */}
             <div className="sticky top-20 z-10 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
                 <div className="flex justify-between items-center">
                     <div className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
@@ -154,10 +177,9 @@ export default function StudentExam() {
                         <Timer className="w-5 h-5" />
                         {formatTime(timeLeft)}
                     </div>
-                    <Button onClick={handleSubmit}>Nộp bài</Button>
+                    <Button onClick={(e) => handleSubmit(e)}>Nộp bài</Button>
                 </div>
 
-                {/* Progress Bar */}
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div
                         className="bg-primary-600 h-2.5 rounded-full transition-all duration-300 ease-out"
@@ -166,30 +188,29 @@ export default function StudentExam() {
                 </div>
             </div>
 
-            {/* Questions list */}
             <div className="space-y-6">
-                {questions.map((q, idx) => (
-                    <Card key={q.id} className="p-6">
+                {questions.map((q: any, idx: number) => (
+                    <Card key={idx} className="p-6">
                         <h3 className="font-medium text-lg mb-4">
                             <span className="font-bold text-gray-500 mr-2">Câu {idx + 1}:</span>
-                            {q.text}
+                            {q.content || q.text}
                         </h3>
                         <div className="space-y-2">
-                            {q.options.map((opt, i) => (
+                            {q.options && q.options.map((opt: string, i: number) => (
                                 <label
                                     key={i}
                                     className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors
-                                        ${answers[q.id] === opt
+                                        ${answers[idx] === opt
                                             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                                         }`}
                                 >
                                     <input
                                         type="radio"
-                                        name={q.id}
+                                        name={`q-${idx}`}
                                         value={opt}
-                                        checked={answers[q.id] === opt}
-                                        onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt }))}
+                                        checked={answers[idx] === opt}
+                                        onChange={() => setAnswers(prev => ({ ...prev, [idx]: opt }))}
                                         className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                                     />
                                     <span className="ml-3">{opt}</span>

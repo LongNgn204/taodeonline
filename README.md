@@ -1,171 +1,121 @@
 
-# Kiến Tạo Việt - Trợ Lý Soạn Đề Thông Minh & Hệ Thống Quản Lý Giáo Dục 4.0 🇻🇳
+# Kiến Tạo Việt - Nền Tảng Giáo Dục Số Thông Minh 🇻🇳
 
 ![Banner](https://img.shields.io/badge/Status-Stable_Release-green?style=for-the-badge)
 ![Tech](https://img.shields.io/badge/Stack-React_Cloudflare_AI-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 
-> **Sứ mệnh:** Cung cấp công cụ AI mạnh mẽ và **hoàn toàn miễn phí** để giải phóng sức lao động cho giáo viên Việt Nam, hướng tới chuyển đổi số thực chất trong giáo dục.
+> **Sứ mệnh:** Cung cấp công cụ AI mạnh mẽ để giải phóng sức lao động cho giáo viên Việt Nam, hướng tới chuyển đổi số thực chất trong giáo dục.
 
-**Kiến Tạo Việt** là nền tảng toàn diện giúp giáo viên:
-1.  **Soạn đề thi chuẩn 7991** chỉ trong vài phút nhờ AI.
-2.  **Quản lý ngân hàng câu hỏi** và cộng tác thời gian thực.
-3.  **Tổ chức thi & Chấm điểm** tự động.
-4.  **Xuất bản đề thi** ra file Word/Excel chuẩn định dạng ngay trong trình duyệt.
+**Kiến Tạo Việt** là hệ thống quản lý và soạn thảo đề thi toàn diện, tích hợp trí tuệ nhân tạo để tự động hóa quy trình từ **Soạn đề -> Tổ chức thi -> Chấm điểm**.
 
 ---
 
-## 🌟 Tính Năng Đột Phá
+## 🌟 Tính Năng Nổi Bật
 
-### 1. Soạn Đề & Ma Trận Chuẩn
-*   **AI Ma Trận:** Tự động xây dựng ma trận đặc tả theo chuẩn **CV 7991/BGDĐT-GDTrH** (Nhận biết - Thông hiểu - Vận dụng - Vận dụng cao).
-*   **Cân bằng độ khó:** Thuật toán phân bổ câu hỏi đảm bảo độ khó của đề thi bám sát ma trận.
-*   **Xuất bản chuẩn in ấn:** Xuất file Word (.docx) định dạng 2 cột, header chuẩn của Bộ, sẵn sàng in và photocopy.
-*   **Xuất Ma trận Excel:** Xuất file Excel (.xlsx) chứa cấu trúc ma trận chi tiết (Chủ đề, Mức độ, Số câu, Điểm).
+### 1. 🧠 Unified AI Core (Lõi AI Đa Nhiệm)
+*   **Dual-Model Configuration:** Cho phép giáo viên tùy chọn model riêng biệt cho từng tác vụ để tối ưu chi phí và hiệu năng:
+    *   **Text Model:** (GPT-4o-mini, Claude 3 Haiku) chuyên dụng cho việc sinh câu hỏi, ma trận.
+    *   **Vision Model:** (Gemini 1.5 Flash, GPT-4o) chuyên dụng cho xử lý hình ảnh (OCR).
+*   **BYOK (Bring Your Own Key):** Hỗ trợ API Key cá nhân từ OpenAI, Google, Anthropic.
+*   **Smart Context:** AI tự động hiểu bối cảnh sách giáo khoa (KNTT, CTST, CD) để sinh câu hỏi bám sát chương trình.
 
-### 2. Sức Mạnh Trí Tuệ Nhân Tạo (AI)
-*   **BYOK (Bring Your Own Key):** Sử dụng API Key cá nhân của bạn (Google Gemini, OpenAI GPT, Anthropic Claude, Groq...) để kiểm soát chi phí và lựa chọn model phù hợp.
-*   **Smart Config:** Hệ thống tự động nhận diện cấu hình API đã lưu, cho phép bạn bắt đầu tạo đề ngay lập tức mà không cần nhập lại key.
-*   **RAG (Retrieval-Augmented Generation):** AI hiểu sâu nội dung Sách giáo khoa (Kết nối Tri thức, Chân trời sáng tạo, Cánh diều) để sinh câu hỏi chính xác.
-*   **OCR Vision:** Số hóa đề thi giấy chỉ bằng một thao tác chụp ảnh hoặc upload PDF.
-*   **Chấm thi Camera:** Chấm phiếu trắc nghiệm bằng Camera điện thoại/Laptop với độ chính xác >98%.
+### 2. 📝 Soạn Đề & Ma Trận Chuẩn 7991
+*   **AI Generator:** Tự động xây dựng ma trận đặc tả theo chuẩn **CV 7991/BGDĐT-GDTrH** (4 mức độ: Nhận biết - Thông hiểu - Vận dụng - Vận dụng cao).
+*   **Cân bằng độ khó:** Thuật toán tự động phân bổ câu hỏi hợp lý.
+*   **Xuất bản chuẩn:**
+    *   **Word (.docx):** Định dạng 2 cột, header chuẩn Bộ GD, sẵn sàng in ấn.
+    *   **Excel (.xlsx):** Báo cáo chi tiết ma trận và phân phối điểm.
 
-### 3. Quản Lý Đề Thi
-*   **Kho Đề Thi:** Lưu trữ, tìm kiếm, và quản lý tất cả đề thi đã tạo với giao diện trực quan.
-*   **Lịch sử Chi Tiết:** Xem chi tiết từng đề thi, bao gồm ma trận đầy đủ và nội dung câu hỏi.
-*   **Quick Actions:** Tải về, chỉnh sửa, hoặc xóa đề thi chỉ với một cú nhấp chuột.
+### 3. 👁️ SỐ HÓA ĐỀ THI (OCR Vision)
+*   **Digitize Exam:** Chuyển đổi đề thi giấy/ảnh chụp/PDF thành văn bản có thể chỉnh sửa chỉ trong vài giây.
+*   **AI Parsing:** Tự động nhận diện cấu trúc câu hỏi (Lời dẫn, Đáp án A/B/C/D) và mức độ nhận thức.
 
-### 4. Cộng Tác & Chia Sẻ
-*   **Real-time Collaboration:** Nhiều giáo viên cùng biên soạn một đề thi cùng lúc (như Google Docs).
-*   **Cộng đồng Giáo viên:** Chia sẻ và sử dụng lại hàng ngàn ma trận/đề thi chất lượng từ đồng nghiệp trên cả nước.
-*   **Zalo Integration:** Tự động gửi thông báo lịch thi, kết quả về Zalo cho phụ huynh học sinh.
+### 4. 🤝 Real-time Collaboration (Cộng Tác)
+*   **Live Editing:** Nhiều giáo viên có thể cùng chỉnh sửa một đề thi trong thời gian thực (tương tự Google Docs).
+*   **Sync Engine:** Công nghệ **Cloudflare Durable Objects** + **WebSocket** đảm bảo độ trễ thấp (<100ms).
+*   **Presence:** Hiển thị ai đang xem/sửa đề thi.
 
-### 5. Hệ Thống Quản Lý
-*   **Cổng thi Học sinh:** Giao diện thi trực tuyến hiện đại, hỗ trợ chống gian lận (full-screen, phát hiện chuyển tab).
-*   **Sổ điểm điện tử:** Tự động tổng hợp điểm, thống kê phổ điểm lớp học.
-*   **Thống kê chi tiết:** Phân tích chất lượng câu hỏi (độ khó, độ phân biệt) để cải tiến đề thi.
-
-### 6. Trợ Lý AI Chat
-*   **Chat Assistant:** Hỗ trợ giải đáp thắc mắc về soạn đề, ma trận, và các vấn đề giáo dục ngay trong ứng dụng.
-
----
-
-## 🛠 Công Nghệ Sử Dụng
-
-Dự án được xây dựng trên nền tảng **Cloudflare** để đảm bảo tốc độ truy cập nhanh nhất và chi phí vận hành bằng 0 (Serverless).
-
-| Thành phần      | Công nghệ                                        |
-| --------------- | ------------------------------------------------ |
-| **Frontend**    | React 18, Vite, TailwindCSS, Framer Motion       |
-| **Backend**     | Hono (Edge API), Cloudflare Workers              |
-| **Database**    | Cloudflare D1 (SQLite at Edge) - Nhanh và miễn phí |
-| **AI Core**     | Tích hợp Google Gemini Pro, OpenAI GPT-4o, Claude |
-| **Real-time**   | Cloudflare Durable Objects + Yjs                 |
-| **Export**      | docx (Word), xlsx (Excel), file-saver            |
+### 5. 🎓 Cổng Thi & Sổ Điểm (Student Portal)
+*   **Thi Trực Tuyến:** Học sinh làm bài qua liên kết công khai (VD: `/public/exams/:id`).
+*   **Anti-Cheat:**
+    *   Cảnh báo khi học sinh rời khỏi màn hình/tab khác.
+    *   Tự động nộp bài khi hết giờ.
+*   **Sổ Điểm Điện Tử:** Tự động chấm điểm, lưu kết quả và thống kê phổ điểm cho giáo viên.
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt (Cho Developer)
+## 🛠 Tech Stack (Công Nghệ)
 
-Nếu bạn muốn tự triển khai (Self-host) hệ thống này cho trường học của mình:
+Dự án sử dụng kiến trúc **Serverless** hiện đại trên nền tảng **Cloudflare**:
+
+| Thành phần | Công nghệ | Ghi chú |
+| :--- | :--- | :--- |
+| **Frontend** | React 18, Vite, TailwindCSS | Giao diện Glassmorphism mượt mà |
+| **State** | Zustand, React Query | Quản lý trạng thái & Cache |
+| **Backend** | Hono, Cloudflare Workers | Edge API siêu tốc độ |
+| **Database** | Cloudflare D1 (SQLite) | Cơ sở dữ liệu quan hệ tại Edge |
+| **Storage** | Cloudflare R2 | Lưu trữ hình ảnh/file đề thi |
+| **Real-time** | Durable Objects | WebSocket serverless |
+| **AI** | Google Gemini, OpenAI | Tích hợp qua REST API |
+
+---
+
+## 🚀 Hướng Dẫn Cài Đặt (Local Development)
 
 ### Yêu cầu
 *   Node.js 18+
 *   Tài khoản Cloudflare (Miễn phí)
-*   API Key từ một nhà cung cấp AI (Google AI Studio, OpenAI, v.v.)
 
-### Các bước
+### Các bước cài đặt
 
-1.  **Clone mã nguồn**
-    ```bash
-    git clone https://github.com/longngn/taodeonline.git
-    cd taodeonline
-    ```
-
-2.  **Cài đặt thư viện**
-    ```bash
-    npm install
-    ```
-
-3.  **Cấu hình Database**
-    ```bash
-    cd apps/api
-    npm run migrate:local # Chạy migrations cho DB local
-    ```
-
-4.  **Khởi chạy**
-    ```bash
-    # Quay về thư mục gốc
-    cd ../..
-    npm run dev
-    ```
-    *   **Web App:** `http://localhost:5173`
-    *   **API Server:** `http://localhost:8787`
-
-5.  **Cấu hình API Key (Lần đầu tiên)**
-    *   Truy cập vào **Cài đặt** trong ứng dụng.
-    *   Nhập API Key của bạn (ví dụ: `AIza...` cho Google Gemini).
-    *   Hệ thống sẽ tự động xác minh và tải danh sách model.
-
----
-
-## 📁 Cấu Trúc Dự Án
-
-```
-taodeonline/
-├── apps/
-│   ├── web/           # Frontend React (Vite)
-│   │   ├── src/
-│   │   │   ├── pages/         # Các trang chính (Dashboard, CreateExam, Settings...)
-│   │   │   ├── components/    # UI Components (Button, Card, MatrixEditor...)
-│   │   │   └── lib/           # Utils (API client, exportUtils, hooks...)
-│   │   └── package.json
-│   └── api/           # Backend (Cloudflare Workers + Hono)
-│       ├── src/
-│       │   └── index.ts       # API routes
-│       └── package.json
-├── packages/
-│   └── shared/        # Shared types và utilities
-├── migrations/        # Database migrations (D1 SQLite)
-└── package.json       # Root package (Turborepo)
+**1. Clone mã nguồn**
+```bash
+git clone https://github.com/longngn/taodeonline.git
+cd taodeonline
 ```
 
----
+**2. Cài đặt dependencies**
+```bash
+npm install
+```
 
-## 🎨 Giao Diện (Screenshots)
+**3. Khởi tạo Database (D1)**
+```bash
+cd apps/api
+npm run migrate:local
+```
 
-> *Coming Soon - Hình ảnh giao diện sẽ được cập nhật.*
+**4. Khởi chạy dự án**
+```bash
+# Tại thư mục gốc (root)
+npm run dev
+```
+*   Frontend: `http://localhost:5173`
+*   Backend: `http://localhost:8787`
 
----
-
-## 🤝 Tham Gia Đóng Góp
-
-Chúng tôi tin rằng **Giáo dục là Chia sẻ**. Dự án là mã nguồn mở (Open Source) và chào đón mọi sự đóng góp từ cộng đồng lập trình viên Việt Nam.
-
-*   🐛 **Báo lỗi:** Tạo Issue trên GitHub.
-*   💡 **Đề xuất:** Gửi ý tưởng tính năng mới.
-*   🔧 **Đóng góp Code:** Fork và gửi Pull Request.
-
-### Quy tắc Đóng góp
-1.  Sử dụng tiếng Anh cho code và tên biến/hàm.
-2.  Comment bằng tiếng Việt tại các khối logic quan trọng.
-3.  Viết test cho các tính năng mới (nếu có).
-4.  Tuân thủ ESLint và Prettier đã cấu hình.
-
----
-
-## 📞 Liên Hệ & Hỗ Trợ
-
-*   **GitHub Issues:** [github.com/longngn/taodeonline/issues](https://github.com/longngn/taodeonline/issues)
-*   **Email:** support@kientaoviet.edu.vn
-*   **Nhóm Zalo Cộng đồng:** [Bấm để tham gia](#)
+**5. Cấu hình AI**
+*   Truy cập **Cài đặt (Settings)** trên giao diện web.
+*   Nhập API Key (Google AI Studio hoặc OpenAI).
+*   Chọn Model cho "Text Generation" và "Vision".
 
 ---
 
-## 📜 Giấy phép
+## 📂 Hướng Dẫn Kiểm Thử (Features)
 
-Dự án được phát hành theo giấy phép **MIT License**. Xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+1.  **Tạo đề thi:** Vào "Tạo đề thi" -> Nhập chủ đề -> AI sinh ma trận -> Sinh đề.
+2.  **Số hóa:** Vào "Số hóa" -> Upload ảnh đề thi -> Xem kết quả nhận diện.
+3.  **Thi thử:** Mở đề thi -> Copy đường dẫn URL -> Mở tab ẩn danh -> Dán URL để vào giao diện học sinh.
+4.  **Cộng tác:** Mở cùng 1 đề thi trên 2 tab trình duyệt khác nhau -> Chỉnh sửa và xem đồng bộ.
 
 ---
 
-© 2025 **Kiến Tạo Việt Team**. Xây dựng với ❤️ dành cho Giáo dục Việt Nam.
+## 📞 Liên Hệ
+
+*   **Tác giả:** Nguyễn Hoàng Long
+*   **Email:** longngn204@gmail.com
+*   **Website:** [kientaoviet.edu.vn](https://kientaoviet.edu.vn) (Coming soon)
+
+---
+
+© 2025 **Kiến Tạo Việt**. Mã nguồn mở theo giấy phép MIT.
