@@ -17,10 +17,6 @@ import {
 } from 'docx';
 import type { ExamContent, Question } from '@exam-matrix/shared';
 
-// Regex để detect subscript/superscript
-const SUBSCRIPT_REGEX = /[₀₁₂₃₄₅₆₇₈₉₊₋]/g;
-const SUPERSCRIPT_REGEX = /[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]/g;
-
 // Map Unicode subscript về số thường
 const SUBSCRIPT_MAP: Record<string, string> = {
     '₀': '0',

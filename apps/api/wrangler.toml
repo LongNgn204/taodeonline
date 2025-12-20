@@ -4,6 +4,9 @@ name = "exam-matrix-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
+# Enable resolving workspace packages
+find_additional_modules = true
+
 # D1 Database
 [[d1_databases]]
 binding = "DB"

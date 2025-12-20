@@ -1,6 +1,9 @@
 // Chú thích: API client wrapper
+// Detect môi trường: dev dùng proxy Vite, production gọi thẳng Worker
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.DEV
+    ? '/api' // Dev: Vite proxy sẽ rewrite và forward đến localhost:8787
+    : 'https://exam-matrix-api.stu725114073.workers.dev'; // Production: Worker API
 
 class ApiClient {
     private baseUrl: string;

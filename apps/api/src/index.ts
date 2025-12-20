@@ -21,7 +21,11 @@ app.use('*', logger());
 app.use(
     '*',
     cors({
-        origin: ['http://localhost:5173', 'https://exam-matrix.pages.dev'],
+        origin: [
+            'http://localhost:5173',
+            'https://exam-matrix.pages.dev',
+            'https://kientaoviet.pages.dev', // Production frontend
+        ],
         credentials: true,
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization'],
