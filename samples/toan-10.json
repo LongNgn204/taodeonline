@@ -1,0 +1,102 @@
+{
+    "subject": "Toán",
+    "grade": 10,
+    "topics": [
+        {
+            "name": "Mệnh đề và tập hợp",
+            "units": [
+                "Mệnh đề, mệnh đề chứa biến",
+                "Phủ định, kéo theo, tương đương",
+                "Tập hợp, các phép toán trên tập hợp"
+            ]
+        },
+        {
+            "name": "Hàm số bậc hai",
+            "units": [
+                "Hàm số, tập xác định, tập giá trị",
+                "Đồ thị hàm số y = ax² + bx + c",
+                "Đỉnh, trục đối xứng parabol"
+            ]
+        },
+        {
+            "name": "Phương trình và hệ phương trình",
+            "units": [
+                "Phương trình bậc hai",
+                "Công thức nghiệm, định lý Viète",
+                "Hệ phương trình bậc nhất hai ẩn"
+            ]
+        },
+        {
+            "name": "Bất đẳng thức và bất phương trình",
+            "units": [
+                "Bất đẳng thức và tính chất",
+                "Bất phương trình bậc nhất một ẩn",
+                "Bất phương trình bậc hai một ẩn"
+            ]
+        }
+    ],
+    "sampleQuestions": {
+        "MCQ": [
+            {
+                "prompt": "Tập nghiệm của phương trình x² - 5x + 6 = 0 là",
+                "options": [
+                    "A. {2; 3}",
+                    "B. {-2; -3}",
+                    "C. {1; 6}",
+                    "D. {-1; -6}"
+                ],
+                "answer": "A",
+                "level": "NB"
+            },
+            {
+                "prompt": "Đỉnh của parabol y = x² - 4x + 3 có tọa độ là",
+                "options": [
+                    "A. (2; -1)",
+                    "B. (-2; 1)",
+                    "C. (2; 1)",
+                    "D. (-2; -1)"
+                ],
+                "answer": "A",
+                "level": "TH"
+            }
+        ],
+        "TF": [
+            {
+                "prompt": "Xét các phát biểu sau về phương trình bậc hai ax² + bx + c = 0 (a ≠ 0):",
+                "items": [
+                    {
+                        "statement": "Nếu Δ > 0 thì phương trình có hai nghiệm phân biệt",
+                        "isTrue": true
+                    },
+                    {
+                        "statement": "Nếu Δ = 0 thì phương trình vô nghiệm",
+                        "isTrue": false
+                    },
+                    {
+                        "statement": "Tổng hai nghiệm bằng -b/a",
+                        "isTrue": true
+                    },
+                    {
+                        "statement": "Tích hai nghiệm bằng -c/a",
+                        "isTrue": false
+                    }
+                ],
+                "level": "TH"
+            }
+        ],
+        "SHORT": [
+            {
+                "prompt": "Công thức tính delta (Δ) của phương trình ax² + bx + c = 0 là",
+                "answer": "b² - 4ac",
+                "level": "NB"
+            }
+        ],
+        "ESSAY": [
+            {
+                "prompt": "Cho phương trình x² - 2mx + m² - m + 1 = 0 (m là tham số). Tìm m để phương trình có hai nghiệm phân biệt.",
+                "answer": "Δ' > 0 ⟺ m² - (m² - m + 1) > 0 ⟺ m - 1 > 0 ⟺ m > 1",
+                "level": "VD"
+            }
+        ]
+    }
+}

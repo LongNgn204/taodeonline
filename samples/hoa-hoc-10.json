@@ -1,0 +1,102 @@
+{
+    "subject": "Hóa học",
+    "grade": 10,
+    "topics": [
+        {
+            "name": "Cấu tạo nguyên tử",
+            "units": [
+                "Thành phần nguyên tử (proton, neutron, electron)",
+                "Số hiệu nguyên tử, số khối",
+                "Đồng vị, nguyên tử khối trung bình"
+            ]
+        },
+        {
+            "name": "Bảng tuần hoàn",
+            "units": [
+                "Cấu tạo bảng tuần hoàn (ô, chu kỳ, nhóm)",
+                "Xu hướng biến đổi tính chất trong bảng tuần hoàn",
+                "Ý nghĩa bảng tuần hoàn"
+            ]
+        },
+        {
+            "name": "Liên kết hóa học",
+            "units": [
+                "Liên kết ion",
+                "Liên kết cộng hóa trị",
+                "Liên kết kim loại"
+            ]
+        },
+        {
+            "name": "Phản ứng oxi hóa - khử",
+            "units": [
+                "Số oxi hóa",
+                "Chất oxi hóa, chất khử",
+                "Cân bằng phản ứng oxi hóa - khử"
+            ]
+        }
+    ],
+    "sampleQuestions": {
+        "MCQ": [
+            {
+                "prompt": "Nguyên tử X có 11 proton, 12 neutron và 11 electron. Số khối của nguyên tử X là",
+                "options": [
+                    "A. 11",
+                    "B. 12",
+                    "C. 22",
+                    "D. 23"
+                ],
+                "answer": "D",
+                "level": "NB"
+            },
+            {
+                "prompt": "Trong bảng tuần hoàn, các nguyên tố được sắp xếp theo chiều tăng dần của",
+                "options": [
+                    "A. Số neutron",
+                    "B. Số khối",
+                    "C. Điện tích hạt nhân",
+                    "D. Khối lượng nguyên tử"
+                ],
+                "answer": "C",
+                "level": "NB"
+            }
+        ],
+        "TF": [
+            {
+                "prompt": "Xét các phát biểu sau về nguyên tử:",
+                "items": [
+                    {
+                        "statement": "Proton mang điện tích dương",
+                        "isTrue": true
+                    },
+                    {
+                        "statement": "Electron có khối lượng lớn hơn proton",
+                        "isTrue": false
+                    },
+                    {
+                        "statement": "Neutron không mang điện",
+                        "isTrue": true
+                    },
+                    {
+                        "statement": "Số proton luôn bằng số neutron",
+                        "isTrue": false
+                    }
+                ],
+                "level": "TH"
+            }
+        ],
+        "SHORT": [
+            {
+                "prompt": "Công thức tính số khối A = ?",
+                "answer": "Z + N hoặc số proton + số neutron",
+                "level": "NB"
+            }
+        ],
+        "ESSAY": [
+            {
+                "prompt": "Giải thích tại sao các nguyên tố trong cùng một nhóm có tính chất hóa học tương tự nhau.",
+                "answer": "Vì có cùng số electron lớp ngoài cùng → cùng cấu hình electron lớp ngoài cùng → tính chất hóa học tương tự",
+                "level": "TH"
+            }
+        ]
+    }
+}

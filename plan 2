@@ -1,0 +1,39 @@
+UI/UX Global Upgrade Plan
+Goal
+Upgrade the "Exam Matrix & Test Generator" with a premium, motion-rich Landing Page and plan a global UI/UX overhaul to ensure a "Wow" factor.
+
+Proposed Changes
+Dependencies
+Add framer-motion for complex animations.
+Add clsx, tailwind-merge for better class management if needed.
+1. New Landing Page (apps/web/src/pages/LandingPage.tsx)
+A completely new entry point with the following sections:
+
+Hero Section:
+High-quality 3D-style illustration (will be generated).
+Animated headline and subheadline.
+Glassmorphism cards floating/parallax effect.
+CTA buttons: "Bắt đầu ngay" (Start Now), "Xem demo".
+Features Grid:
+Cards with hover effects (scale, glow).
+Icons using lucide-react with animated backgrounds.
+Features: "Ma trận chuẩn 7991", "AI Đa Multi-Model", "Export Word/Excel", "Chấm điểm tự động".
+How It Works:
+Step-by-step connection line animation.
+Scroll-triggered reveal animations.
+Trusted/Footer:
+Simple sleek footer.
+2. Global Polish
+App Layout: Update 
+App.tsx
+ to set Landing Page as / and Dashboard as /dashboard.
+Navigation: Update Main Layout to be cleaner, maybe sidebar or topbar enhancement.
+Micro-interactions: Add hover states to all buttons, input focus rings with colors.
+3. Future Upgrade Roadmap (Included in Plan)
+Matrix Editor: Drag & Drop experience for topic reordering.
+Exam Preview: Real-time print preview mode.
+Dark Mode: Refine contrast and palette.
+Verification Plan
+Interactive Test: Verify Landing Page animations and responsiveness on Mobile/Desktop.
+Navigation Test: Ensure efficient flow from Landing -> Login -> Dashboard.
+Build Test: Ensure no build errors with new libraries.

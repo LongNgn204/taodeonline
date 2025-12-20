@@ -1,0 +1,31 @@
+{
+  "name": "exam-matrix-generator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tạo Ma trận đề kiểm tra và Đề thi theo Công văn 7991/BGDĐT-GDTrH",
+  "author": "Nguyễn Hoàng Long",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "rimraf": "^5.0.5",
+    "turbo": "^2.3.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
