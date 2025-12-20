@@ -1,0 +1,86 @@
+// Chú thích: Entry point cho Cloudflare Worker API
+// Sử dụng Hono làm router, modular theo routes
+
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { authRoutes } from './routes/auth.js';
+import { libraryRoutes } from './routes/libraries.js';
+import { documentRoutes } from './routes/documents.js';
+import { examRoutes } from './routes/exams.js';
+import { exportRoutes } from './routes/exports.js';
+import { gradingRoutes } from './routes/grading.js';
+import { authMiddleware } from './middleware/auth.js';
+import type { Env } from './types.js';
+
+const app = new Hono<{ Bindings: Env }>();
+
+// Global middleware
+app.use('*', logger());
+app.use(
+    '*',
+    cors({
+        origin: ['http://localhost:5173', 'https://exam-matrix.pages.dev'],
+        credentials: true,
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization'],
+    })
+);
+
+// Health check
+app.get('/', (c) => {
+    return c.json({
+        name: 'Exam Matrix API',
+        version: '0.1.0',
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// Public routes
+app.route('/auth', authRoutes);
+
+// Protected routes - cần auth
+app.use('/libraries/*', authMiddleware);
+app.use('/documents/*', authMiddleware);
+app.use('/exams/*', authMiddleware);
+app.use('/exports/*', authMiddleware);
+app.use('/grading/*', authMiddleware);
+app.use('/me', authMiddleware);
+
+app.route('/libraries', libraryRoutes);
+app.route('/documents', documentRoutes);
+app.route('/exams', examRoutes);
+app.route('/exports', exportRoutes);
+app.route('/grading', gradingRoutes);
+
+// Get current user
+app.get('/me', (c) => {
+    const user = c.get('user');
+    return c.json({ user });
+});
+
+// Error handler
+app.onError((err, c) => {
+    console.error('[API Error]', err);
+    return c.json(
+        {
+            error: 'internal_error',
+            message: err.message || 'An unexpected error occurred',
+        },
+        500
+    );
+});
+
+// 404 handler
+app.notFound((c) => {
+    return c.json(
+        {
+            error: 'not_found',
+            message: 'Endpoint not found',
+        },
+        404
+    );
+});
+
+export default app;

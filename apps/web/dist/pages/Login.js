@@ -1,0 +1,24 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+// Chú thích: Login page với form đăng nhập
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FileSpreadsheet, Mail, Lock, ArrowRight } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+export default function Login() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const { login, error } = useAuth();
+    const navigate = useNavigate();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const success = await login(email, password);
+        if (success) {
+            navigate('/');
+        }
+        setIsLoading(false);
+    };
+    return (_jsxs("div", { className: "min-h-screen flex", children: [_jsxs("div", { className: "hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-accent-700 p-12 flex-col justify-between", children: [_jsxs("div", { className: "flex items-center gap-3", children: [_jsx("div", { className: "w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center", children: _jsx(FileSpreadsheet, { className: "w-7 h-7 text-white" }) }), _jsx("span", { className: "text-2xl font-bold text-white", children: "Exam Matrix" })] }), _jsxs("div", { className: "space-y-6", children: [_jsxs("h1", { className: "text-4xl font-bold text-white leading-tight", children: ["T\u1EA1o \u0111\u1EC1 ki\u1EC3m tra", _jsx("br", {}), "theo C\u00F4ng v\u0103n 7991"] }), _jsx("p", { className: "text-primary-100 text-lg max-w-md", children: "C\u00F4ng c\u1EE5 h\u1ED7 tr\u1EE3 gi\u00E1o vi\u00EAn t\u1EA1o ma tr\u1EADn \u0111\u1EC1 v\u00E0 \u0111\u1EC1 thi theo chu\u1EA9n c\u1EE7a B\u1ED9 GD&\u0110T, b\u00E1m s\u00E1t Ch\u01B0\u01A1ng tr\u00ECnh GDPT 2018." })] }), _jsxs("div", { className: "flex gap-4", children: [_jsx("div", { className: "px-4 py-2 rounded-lg bg-white/10 text-white text-sm", children: "\u2713 Ma tr\u1EADn chu\u1EA9n CV 7991" }), _jsx("div", { className: "px-4 py-2 rounded-lg bg-white/10 text-white text-sm", children: "\u2713 Export Excel/Word" }), _jsx("div", { className: "px-4 py-2 rounded-lg bg-white/10 text-white text-sm", children: "\u2713 H\u1ED7 tr\u1EE3 AI" })] })] }), _jsx("div", { className: "flex-1 flex items-center justify-center p-8", children: _jsxs("div", { className: "w-full max-w-md", children: [_jsxs("div", { className: "lg:hidden flex items-center gap-3 mb-8", children: [_jsx("div", { className: "w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center", children: _jsx(FileSpreadsheet, { className: "w-6 h-6 text-white" }) }), _jsx("span", { className: "text-xl font-bold", children: "Exam Matrix" })] }), _jsx("h2", { className: "text-2xl font-bold text-gray-900 dark:text-white mb-2", children: "\u0110\u0103ng nh\u1EADp" }), _jsx("p", { className: "text-gray-500 dark:text-gray-400 mb-8", children: "Ch\u00E0o m\u1EEBng b\u1EA1n quay l\u1EA1i! \u0110\u0103ng nh\u1EADp \u0111\u1EC3 ti\u1EBFp t\u1EE5c." }), _jsxs("form", { onSubmit: handleSubmit, className: "space-y-5", children: [error && (_jsx("div", { className: "p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm", children: error })), _jsxs("div", { children: [_jsx("label", { htmlFor: "email", className: "label", children: "Email" }), _jsxs("div", { className: "relative", children: [_jsx(Mail, { className: "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" }), _jsx("input", { id: "email", type: "email", value: email, onChange: (e) => setEmail(e.target.value), className: "input pl-10", placeholder: "teacher@school.edu.vn", required: true })] })] }), _jsxs("div", { children: [_jsx("label", { htmlFor: "password", className: "label", children: "M\u1EADt kh\u1EA9u" }), _jsxs("div", { className: "relative", children: [_jsx(Lock, { className: "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" }), _jsx("input", { id: "password", type: "password", value: password, onChange: (e) => setPassword(e.target.value), className: "input pl-10", placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022", required: true, minLength: 8 })] })] }), _jsx("button", { type: "submit", disabled: isLoading, className: "btn-primary w-full py-3", children: isLoading ? (_jsx("div", { className: "spinner" })) : (_jsxs(_Fragment, { children: ["\u0110\u0103ng nh\u1EADp", _jsx(ArrowRight, { className: "w-4 h-4" })] })) })] }), _jsxs("p", { className: "mt-6 text-center text-gray-500 dark:text-gray-400", children: ["Ch\u01B0a c\u00F3 t\u00E0i kho\u1EA3n?", ' ', _jsx(Link, { to: "/register", className: "text-primary-600 hover:underline font-medium", children: "\u0110\u0103ng k\u00FD ngay" })] })] }) })] }));
+}
+//# sourceMappingURL=Login.js.map

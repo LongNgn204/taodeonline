@@ -1,0 +1,39 @@
+# Exam Matrix Generator - API Worker
+
+name = "exam-matrix-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "giaoduc-db"
+database_id = "370a7952-ac94-48c6-bcc3-a41b9535dac2"  # Thay bằng ID thực sau khi tạo DB
+
+# R2 Storage
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "giaoducr2-files"
+
+# KV Namespace (rate limit, cache)
+[[kv_namespaces]]
+binding = "KV"
+id = "1288e3b38d724d9ab2b4177e8aca89c0"  # Thay bằng ID thực
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Dev environment
+[env.dev]
+name = "exam-matrix-api-dev"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+
+# Production environment
+[env.production]
+name = "exam-matrix-api"
+
+[env.production.vars]
+ENVIRONMENT = "production"
