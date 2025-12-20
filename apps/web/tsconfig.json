@@ -7,6 +7,15 @@
         "paths": {
             "@/*": [
                 "./src/*"
+            ],
+            "@exam-matrix/shared": [
+                "../../packages/shared/src/index.ts"
+            ],
+            "@exam-matrix/export": [
+                "../../packages/export/src/index.ts"
+            ],
+            "@exam-matrix/rag": [
+                "../../packages/rag/src/index.ts"
             ]
         }
     },

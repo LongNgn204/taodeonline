@@ -32,6 +32,9 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            '@exam-matrix/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+            '@exam-matrix/export': path.resolve(__dirname, '../../packages/export/src/index.ts'),
+            '@exam-matrix/rag': path.resolve(__dirname, '../../packages/rag/src/index.ts'),
         },
     },
     server: {
