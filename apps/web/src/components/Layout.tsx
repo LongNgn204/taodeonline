@@ -9,13 +9,16 @@ import {
     Menu,
     X,
     FileSpreadsheet,
+    Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 const navItems = [
-    { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/libraries', label: 'Thư viện', icon: BookOpen },
+    { path: '/digitize', label: 'Số hóa Đề (OCR)', icon: FileSpreadsheet },
+    { path: '/ai-hub', label: 'Trung tâm AI', icon: Sparkles },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
 ];
 
@@ -50,7 +53,7 @@ export default function Layout() {
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
                             <FileSpreadsheet className="w-5 h-5 text-white" />
                         </div>
-                        <span className="font-bold text-lg text-gray-900 dark:text-white">Exam Matrix</span>
+                        <span className="font-bold text-lg text-gray-900 dark:text-white">Hệ thống Tạo Đề Thi AI</span>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}

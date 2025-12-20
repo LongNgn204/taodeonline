@@ -60,7 +60,7 @@ export default function Dashboard() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tổng quan</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">
-                        Chào mừng đến với Exam Matrix Generator
+                        Chào mừng đến với Hệ thống Tạo Đề Thi Nhờ Sử Dụng Trí Tuệ Nhân Tạo
                     </p>
                 </div>
                 <Link to="/libraries" className="btn-primary">

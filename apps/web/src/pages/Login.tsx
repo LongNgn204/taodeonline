@@ -32,7 +32,7 @@ export default function Login() {
                     <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
                         <FileSpreadsheet className="w-7 h-7 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-white">Exam Matrix</span>
+                    <span className="text-xl font-bold text-white">Hệ thống Tạo Đề Thi Nhờ Sử Dụng Trí Tuệ Nhân Tạo</span>
                 </div>
 
                 <div className="space-y-6">
@@ -67,7 +67,7 @@ export default function Login() {
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
                             <FileSpreadsheet className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-xl font-bold">Exam Matrix</span>
+                        <span className="text-lg font-bold">Hệ thống Tạo Đề Thi AI</span>
                     </div>
 
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h2>

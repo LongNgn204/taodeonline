@@ -10,6 +10,7 @@ import { documentRoutes } from './routes/documents.js';
 import { examRoutes } from './routes/exams.js';
 import { exportRoutes } from './routes/exports.js';
 import { gradingRoutes } from './routes/grading.js';
+import aiHubRoutes from './routes/aiHub.js';
 import { authMiddleware } from './middleware/auth.js';
 import type { Env } from './types.js';
 
@@ -30,7 +31,7 @@ app.use(
 // Health check
 app.get('/', (c) => {
     return c.json({
-        name: 'Exam Matrix API',
+        name: 'Hệ thống Tạo Đề Thi AI API',
         version: '0.1.0',
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -53,6 +54,25 @@ app.route('/documents', documentRoutes);
 app.route('/exams', examRoutes);
 app.route('/exports', exportRoutes);
 app.route('/grading', gradingRoutes);
+
+// AI Hub routes (optional auth - some endpoints work without auth)
+app.use('/ai-hub/*', authMiddleware);
+app.route('/ai-hub', aiHubRoutes);
+
+// Analytics routes
+import analyticsRoutes from './routes/analytics.js';
+app.use('/analytics/*', authMiddleware);
+app.route('/analytics', analyticsRoutes);
+
+// Question Bank routes
+import questionBankRoutes from './routes/questionBank.js';
+app.use('/question-bank/*', authMiddleware);
+app.route('/question-bank', questionBankRoutes);
+
+// OCR routes
+import ocrRoutes from './routes/ocr.js';
+app.use('/ocr/*', authMiddleware);
+app.route('/ocr', ocrRoutes);
 
 // Get current user
 app.get('/me', (c) => {
@@ -82,5 +102,11 @@ app.notFound((c) => {
         404
     );
 });
+
+export { CollaborationDO } from './durable_objects/CollaborationDO';
+import collaborationRoutes from './routes/collaboration.js';
+
+app.use('/collab/*', authMiddleware);
+app.route('/collab', collaborationRoutes);
 
 export default app;

@@ -158,8 +158,8 @@ export default function ExamPreview({
                                             <div
                                                 key={opt.label}
                                                 className={`p-2 rounded-lg border ${answersVisible && opt.label === question.answerKey
-                                                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                                        : 'border-gray-200 dark:border-gray-700'
+                                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                                    : 'border-gray-200 dark:border-gray-700'
                                                     }`}
                                             >
                                                 <span className="font-medium mr-2">{opt.label}.</span>
@@ -179,10 +179,10 @@ export default function ExamPreview({
                                             <div
                                                 key={item.id}
                                                 className={`p-2 rounded-lg border flex items-center ${answersVisible
-                                                        ? item.isTrue
-                                                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                                            : 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                                                        : 'border-gray-200 dark:border-gray-700'
+                                                    ? item.isTrue
+                                                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                                        : 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                                    : 'border-gray-200 dark:border-gray-700'
                                                     }`}
                                             >
                                                 <span className="font-medium mr-3">{String.fromCharCode(97 + idx)})</span>
@@ -261,7 +261,7 @@ export default function ExamPreview({
 
             {/* Footer */}
             <div className="text-center text-sm text-gray-400 pt-6 border-t border-gray-200 dark:border-gray-700">
-                Đề thi được tạo bởi Exam Matrix Generator - CV 7991/BGDĐT-GDTrH
+                Đề thi được tạo bởi Hệ thống Tạo Đề Thi Nhờ Sử Dụng Trí Tuệ Nhân Tạo - CV 7991/BGDĐT-GDTrH
             </div>
         </div>
     );

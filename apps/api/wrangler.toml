@@ -9,6 +9,7 @@ compatibility_date = "2024-12-01"
 binding = "DB"
 database_name = "giaoduc-db"
 database_id = "370a7952-ac94-48c6-bcc3-a41b9535dac2"  # Thay bằng ID thực sau khi tạo DB
+migrations_dir = "../../migrations"
 
 # R2 Storage
 [[r2_buckets]]
@@ -19,6 +20,16 @@ bucket_name = "giaoducr2-files"
 [[kv_namespaces]]
 binding = "KV"
 id = "1288e3b38d724d9ab2b4177e8aca89c0"  # Thay bằng ID thực
+
+# Durable Objects
+[durable_objects]
+bindings = [
+  { name = "COLLABORATION_DO", class_name = "CollaborationDO" }
+]
+
+[[migrations]]
+tag = "v1" # Should be unique for each migration
+new_classes = ["CollaborationDO"]
 
 # Environment variables
 [vars]

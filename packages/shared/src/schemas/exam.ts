@@ -35,6 +35,10 @@ export const QuestionSchema = z.object({
     unitId: z.string(),
     prompt: z.string(), // Nội dung câu hỏi
 
+    // Hình ảnh câu hỏi (cho câu hỏi trực quan)
+    imageUrl: z.string().optional(),
+    imageCaption: z.string().optional(),
+
     // Dành cho MCQ
     options: z.array(MCQOptionSchema).length(4).optional(),
 
@@ -68,6 +72,8 @@ export type ExamSection = z.infer<typeof ExamSectionSchema>;
 // Đề thi hoàn chỉnh
 export const ExamContentSchema = z.object({
     version: z.string(), // Semver: exam-v1.0.0
+    versionCode: z.enum(['A', 'B', 'C', 'D', 'E', 'F']).default('A'), // Mã đề
+    examMode: z.enum(['exam', 'practice', 'group']).default('exam'), // Chế độ
     title: z.string(), // "ĐỀ KIỂM TRA ĐỊNH KỲ"
     subject: z.string(),
     grade: z.number().int(),
@@ -76,6 +82,9 @@ export const ExamContentSchema = z.object({
     totalScore: z.literal(10),
     createdAt: z.string(),
     matrixVersion: z.string(), // Link đến version ma trận đã dùng
+    shuffleQuestions: z.boolean().default(false), // Có xáo trộn câu hỏi không
+    shuffleOptions: z.boolean().default(false), // Có xáo trộn đáp án không
+    parentExamId: z.string().optional(), // ID đề gốc nếu là phiên bản
 });
 export type ExamContent = z.infer<typeof ExamContentSchema>;
 

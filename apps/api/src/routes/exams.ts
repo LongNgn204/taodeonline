@@ -10,10 +10,11 @@ import {
     isoNow,
     safeJsonParse,
 } from '@exam-matrix/shared';
-import type { Matrix } from '@exam-matrix/shared';
+import type { Matrix, ExamContent } from '@exam-matrix/shared';
 import type { Env } from '../types.js';
 import { generateMatrix, validateMatrix } from '../agents/matrix-agent.js';
 import { generateExam } from '../agents/exam-agent.js';
+import { generateExamVersions } from '../services/ExamVersionGenerator.js';
 
 const exams = new Hono<{ Bindings: Env }>();
 
@@ -217,6 +218,62 @@ exams.post('/generate-exam', async (c) => {
         });
     } catch (error) {
         console.error('[exam] exam generation failed:', error);
+        return c.json(
+            { error: 'generation_failed', message: String(error) },
+            500
+        );
+    }
+});
+
+// POST /exams/generate-versions - Tạo nhiều phiên bản đề từ một đề gốc
+exams.post('/generate-versions', async (c) => {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'unauthorized' }, 401);
+
+    const body = await c.req.json().catch(() => ({})) as {
+        examJson: string;
+        numberOfVersions?: number;
+        shuffleQuestions?: boolean;
+        shuffleOptions?: boolean;
+    };
+
+    const { examJson, numberOfVersions = 3, shuffleQuestions = true, shuffleOptions = true } = body;
+
+    if (!examJson) {
+        return c.json({ error: 'validation_error', message: 'examJson is required' }, 400);
+    }
+
+    if (numberOfVersions < 1 || numberOfVersions > 6) {
+        return c.json({ error: 'validation_error', message: 'numberOfVersions must be 1-6' }, 400);
+    }
+
+    // Parse original exam
+    const originalExam = safeJsonParse<ExamContent | null>(examJson, null);
+    if (!originalExam) {
+        return c.json({ error: 'invalid_exam', message: 'Đề thi không hợp lệ' }, 400);
+    }
+
+    try {
+        // Generate multiple versions
+        const versions = generateExamVersions(originalExam, {
+            numberOfVersions,
+            shuffleQuestions,
+            shuffleOptions,
+        });
+
+        console.info('[exam] versions generated', {
+            originalTitle: originalExam.title,
+            versionsCount: versions.length,
+            versionCodes: versions.map(v => v.versionCode),
+        });
+
+        return c.json({
+            success: true,
+            versions,
+            versionsCount: versions.length,
+        });
+    } catch (error) {
+        console.error('[exam] version generation failed:', error);
         return c.json(
             { error: 'generation_failed', message: String(error) },
             500
