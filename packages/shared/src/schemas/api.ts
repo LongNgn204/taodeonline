@@ -48,12 +48,14 @@ export const AIProviderSchema = z.enum([
     'deepseek',
     'cohere',
     'together',
+    'openrouter',
+    'perplexity',
 ]);
 
 export const GenerateMatrixRequestSchema = z.object({
     libraryId: z.string(),
     scope: z.array(z.string()).optional(), // Phạm vi chương/bài
-    numTopics: z.number().int().min(2).max(6).default(4),
+    numTopics: z.number().int().min(2).max(15).default(4),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10), // User's API key
