@@ -1,6 +1,7 @@
 // Chú thích: ChatAssistant component - Floating AI helper
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, Sparkles, Loader2, Minimize2, Maximize2 } from 'lucide-react';
+import { getAIConfig } from '../lib/ai-config';
 
 interface Message {
     id: string;
@@ -47,9 +48,8 @@ export default function ChatAssistant() {
 
         try {
             // Check for API Key & Model
-            const apiKey = localStorage.getItem('ai_api_key');
-            const provider = localStorage.getItem('ai_provider_id') || 'openai';
-            const model = localStorage.getItem('ai_selected_model') || 'gpt-4o-mini';
+            // Check for API Key & Model
+            const { apiKey, providerId: provider, modelId: model } = getAIConfig();
 
             if (!apiKey) {
                 // throw new Error('Vui lòng nhập API Key trong phần Cài đặt để sử dụng trợ lý.');

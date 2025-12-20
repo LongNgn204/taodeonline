@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Upload, FileText, ArrowRight, Loader2, ScanLine, Copy, RefreshCw } from 'lucide-react';
+import { getAIConfig } from '../lib/ai-config';
 // Button removed
 // Reverting to standard transparent UI to ensure consistent look
 // import { Card } from '../components/ui/Card'; 
@@ -25,9 +26,11 @@ export default function DigitizeExam() {
         if (!file) return;
 
         // Validation
-        const apiKey = localStorage.getItem('ai_api_key');
-        const provider = localStorage.getItem('ai_provider_id') || 'openai';
-        const model = localStorage.getItem('ai_vision_model') || localStorage.getItem('ai_selected_model') || 'gpt-4o';
+        // Validation
+        const config = getAIConfig();
+        const apiKey = config.apiKey;
+        const provider = config.providerId;
+        const model = config.visionModelId || config.modelId;
 
         if (!apiKey) {
             alert('Vui lòng định cấu hình API Key trong Settings trước.');

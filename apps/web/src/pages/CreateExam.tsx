@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
+import { getAIConfig } from '../lib/ai-config';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
@@ -38,10 +39,11 @@ export default function CreateExam() {
     const [loading, setLoading] = useState(false);
 
     // Config state
-    // Read local storage initial values
-    const [provider] = useState(() => localStorage.getItem('ai_provider_id') || 'openai');
-    const [model] = useState(() => localStorage.getItem('ai_selected_model') || 'gpt-4o-mini');
-    const [apiKey] = useState(() => localStorage.getItem('ai_api_key') || '');
+    // Read local storage initial values via helper
+    const aiConfig = getAIConfig();
+    const [provider] = useState(aiConfig.providerId);
+    const [model] = useState(aiConfig.modelId);
+    const [apiKey] = useState(aiConfig.apiKey);
     const [numTopics, setNumTopics] = useState(4);
 
     // Generated data
@@ -53,7 +55,7 @@ export default function CreateExam() {
             alert('Vui lòng nhập API key');
             return;
         }
-        localStorage.setItem('ai_api_key', apiKey);
+        // Removed redundant localStorage write to preserve encryption
         setLoading(true);
         try {
             const res = await api.post('/exams/generate-matrix', {
