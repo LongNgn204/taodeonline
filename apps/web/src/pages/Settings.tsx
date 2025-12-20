@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, RefreshCw, Eye, EyeOff, Check, Cpu, Zap, Layers, Box, ShieldCheck, Sparkles, Trash2, Globe, Key, Loader2 } from 'lucide-react';
-import { AIModel } from '@exam-matrix/shared';
+import { RefreshCw, Eye, EyeOff, Check, Cpu, Zap, Layers, Box, ShieldCheck, Sparkles, Trash2, Loader2 } from 'lucide-react';
+
+interface AIModel {
+    id: string;
+    displayName: string;
+    providerId: string;
+}
 
 // Configuration for AI Providers (metadata only)
 const AI_PROVIDERS = [
