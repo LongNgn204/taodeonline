@@ -1,9 +1,34 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: 'prompt', // Hiển thị popup hỏi user thay vì tự update
+            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            manifest: {
+                name: 'Kiến Tạo Việt - Trợ Lý Soạn Đề',
+                short_name: 'Kiến Tạo Việt',
+                description: 'Tạo Ma trận đề kiểm tra và Đề thi theo Công văn 7991/BGDĐT-GDTrH',
+                theme_color: '#ffffff',
+                icons: [
+                    {
+                        src: 'pwa-192x192.png',
+                        sizes: '192x192',
+                        type: 'image/png'
+                    },
+                    {
+                        src: 'pwa-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png'
+                    }
+                ]
+            }
+        })
+    ],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
