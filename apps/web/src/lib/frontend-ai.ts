@@ -182,6 +182,8 @@ export async function callAI(options: AICallOptions): Promise<string> {
     throw new Error('Vui lòng chọn Model trong phần Cài đặt.');
   }
 
+  console.info('[callAI] Starting request:', { providerId, modelId, jsonMode: options.jsonMode });
+
   const messages = [
     { role: 'system' as const, content: options.systemPrompt },
     { role: 'user' as const, content: options.userPrompt }
@@ -213,10 +215,17 @@ export async function callAI(options: AICallOptions): Promise<string> {
     const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(googleBody) });
     if (!res.ok) {
       const errText = await res.text();
+      console.error('[callAI] Google error:', res.status, errText);
       throw new Error(`Google API lỗi (${res.status}): ${errText.slice(0, 150)}`);
     }
     const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.info('[callAI] Google response received');
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!content) {
+      console.error('[callAI] Empty Google response:', JSON.stringify(data).slice(0, 500));
+      throw new Error('Google AI trả về response rỗng.');
+    }
+    return content;
   } else {
     // OpenAI-compatible providers
     const baseUrl = AI_ENDPOINTS[providerId] || AI_ENDPOINTS.openai;
@@ -225,13 +234,18 @@ export async function callAI(options: AICallOptions): Promise<string> {
   }
 
   // Standard OpenAI-compatible request
+  // Chú thích: Không dùng json_mode cho OpenRouter vì nhiều free models không hỗ trợ
+  const useJsonMode = options.jsonMode && providerId !== 'openrouter';
+
   const body = {
     model: modelId,
     messages,
     temperature: 0.7,
     max_tokens: 8192,
-    ...(options.jsonMode && { response_format: { type: 'json_object' } }),
+    ...(useJsonMode && { response_format: { type: 'json_object' } }),
   };
+
+  console.info('[callAI] Sending request to:', url.split('?')[0]);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -246,7 +260,20 @@ export async function callAI(options: AICallOptions): Promise<string> {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  console.info('[callAI] Response received:', {
+    hasChoices: !!data.choices,
+    choicesLength: data.choices?.length,
+    contentLength: data.choices?.[0]?.message?.content?.length
+  });
+
+  const content = data.choices?.[0]?.message?.content || '';
+
+  if (!content) {
+    console.error('[callAI] Empty response data:', JSON.stringify(data).slice(0, 1000));
+    throw new Error('AI trả về response rỗng. Có thể model không khả dụng hoặc API key hết quota.');
+  }
+
+  return content;
 }
 
 /**
@@ -255,11 +282,14 @@ export async function callAI(options: AICallOptions): Promise<string> {
 export async function callAIJson<T>(options: AICallOptions): Promise<T> {
   const content = await callAI({ ...options, jsonMode: true });
 
+  console.info('[callAIJson] Content received, length:', content.length);
+  console.info('[callAIJson] Content preview:', content.slice(0, 300));
+
   // Tìm JSON trong response
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    console.error('[callAIJson] No JSON found:', content.slice(0, 500));
-    throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại.');
+    console.error('[callAIJson] No JSON found in content:', content.slice(0, 500));
+    throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại hoặc chọn model khác.');
   }
 
   try {
