@@ -1,0 +1,40 @@
+{
+    "id": "tt32-2018",
+    "code": "TT32-2018",
+    "title": "Thông tư 32/2018/TT-BGDĐT - Chương trình GDPT 2018",
+    "issuer": "MOE",
+    "issuedDate": "2018-12-26",
+    "effectiveFrom": "2019-02-15",
+    "scope": [
+        "THCS",
+        "THPT"
+    ],
+    "mode": "curriculum",
+    "summary": "Ban hành Chương trình giáo dục phổ thông 2018 - định hướng phát triển phẩm chất và năng lực người học. Triển khai từ năm học 2020-2021 (lớp 1) đến 2024-2025 (lớp 12).",
+    "rules": {
+        "constraints": {
+            "total_score": 10,
+            "cognitive_levels": {
+                "NB": 40,
+                "TH": 30,
+                "VD": 30
+            }
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ],
+            "tf_items_count": 4
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "tt32-2018-dieu1",
+            "page": 1,
+            "quote": "Ban hành kèm theo Thông tư này Chương trình giáo dục phổ thông, bao gồm: Chương trình tổng thể; Các chương trình môn học và hoạt động giáo dục."
+        }
+    ]
+}

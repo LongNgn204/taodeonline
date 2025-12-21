@@ -1,0 +1,40 @@
+{
+    "id": "tt17-2025",
+    "code": "TT17-2025",
+    "title": "Thông tư 17/2025/TT-BGDĐT - Sửa đổi, bổ sung CTGDPT",
+    "issuer": "MOE",
+    "issuedDate": "2025-06-12",
+    "effectiveFrom": "2025-09-12",
+    "scope": [
+        "THCS",
+        "THPT"
+    ],
+    "mode": "curriculum",
+    "summary": "Sửa đổi, bổ sung một số nội dung trong CTGDPT ban hành kèm TT32/2018. Cập nhật yêu cầu cần đạt và nội dung giáo dục phù hợp thực tiễn.",
+    "rules": {
+        "constraints": {
+            "total_score": 10,
+            "cognitive_levels": {
+                "NB": 40,
+                "TH": 30,
+                "VD": 30
+            }
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ],
+            "tf_items_count": 4
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "tt17-2025-dieu1",
+            "page": 1,
+            "quote": "Sửa đổi, bổ sung một số nội dung CTGDPT ban hành kèm theo Thông tư số 32/2018/TT-BGDĐT ngày 26/12/2018."
+        }
+    ]
+}

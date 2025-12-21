@@ -1,0 +1,87 @@
+{
+    "id": "cv7991-2024",
+    "code": "CV7991-2024",
+    "title": "Công văn 7991/BGDĐT-GDTrH - Hướng dẫn KTĐG định kỳ THCS/THPT",
+    "issuer": "MOE",
+    "issuedDate": "2024-12-17",
+    "effectiveFrom": "2025-01-01",
+    "scope": [
+        "THCS",
+        "THPT"
+    ],
+    "mode": "school_assessment",
+    "summary": "Hướng dẫn thực hiện kiểm tra, đánh giá định kỳ cấp THCS/THPT từ học kỳ 2 năm học 2024-2025. Đề kiểm tra 60 phút gồm: TN khách quan 7 điểm (MCQ 3đ, Đ/S 2đ, TLN 2đ) và Tự luận 3 điểm. Tỷ lệ nhận thức 40/30/30.",
+    "rules": {
+        "constraints": {
+            "duration": {
+                "default": 60
+            },
+            "score_distribution": {
+                "MCQ": 3,
+                "TF": 2,
+                "SHORT": 2,
+                "ESSAY": 3
+            },
+            "total_score": 10,
+            "cognitive_levels": {
+                "NB": 40,
+                "TH": 30,
+                "VD": 30
+            }
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ],
+            "tf_items_count": 4,
+            "short_answer_format": "text"
+        },
+        "matrix_template": {
+            "description": "Ma trận đề theo phụ lục CV7991",
+            "sections": [
+                {
+                    "name": "Phần I. TRẮC NGHIỆM KHÁCH QUAN",
+                    "total_points": 7,
+                    "types": [
+                        {
+                            "type": "MCQ",
+                            "points": 3,
+                            "description": "Nhiều lựa chọn"
+                        },
+                        {
+                            "type": "TF",
+                            "points": 2,
+                            "description": "Đúng/Sai 4 ý"
+                        },
+                        {
+                            "type": "SHORT",
+                            "points": 2,
+                            "description": "Trả lời ngắn"
+                        }
+                    ]
+                },
+                {
+                    "name": "Phần II. TỰ LUẬN",
+                    "total_points": 3,
+                    "types": [
+                        {
+                            "type": "ESSAY",
+                            "points": 3,
+                            "description": "Tự luận"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "cv7991-2024-phu-luc",
+            "page": 3,
+            "quote": "Cấu trúc đề kiểm tra định kỳ: Trắc nghiệm khách quan (7 điểm) gồm: nhiều lựa chọn (3đ), đúng-sai (2đ), trả lời ngắn (2đ); Tự luận (3 điểm). Tỷ lệ mức độ nhận thức: Nhận biết 40%, Thông hiểu 30%, Vận dụng 30%."
+        }
+    ]
+}

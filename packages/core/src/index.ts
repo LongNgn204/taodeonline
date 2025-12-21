@@ -4,3 +4,4 @@ export * from './validator/base';
 export * from './validator/registry';
 export * from './validator/tn2025';
 export * from './blueprint/defaults';
+export * from './policies/policy-registry';

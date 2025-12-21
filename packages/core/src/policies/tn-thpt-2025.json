@@ -1,0 +1,63 @@
+{
+    "id": "tn-thpt-2025",
+    "code": "TN-THPT-2025",
+    "title": "Cấu trúc đề thi TN THPT từ năm 2025",
+    "issuer": "MOE",
+    "issuedDate": "2024-10-15",
+    "effectiveFrom": "2025-01-01",
+    "scope": [
+        "THPT"
+    ],
+    "mode": "graduation_exam",
+    "summary": "Cấu trúc và định dạng đề thi TN THPT áp dụng từ năm 2025. 3 dạng trắc nghiệm: MCQ nhiều lựa chọn, Đúng/Sai 4 ý, Trả lời ngắn. Ngữ văn thi tự luận 120 phút. Toán 90 phút 34 câu. Môn khác 50 phút.",
+    "rules": {
+        "constraints": {
+            "duration": {
+                "by_subject": {
+                    "Ngữ văn": 120,
+                    "Toán": 90,
+                    "Tiếng Anh": 50,
+                    "Vật lí": 50,
+                    "Hóa học": 50,
+                    "Sinh học": 50,
+                    "Lịch sử": 50,
+                    "Địa lí": 50,
+                    "GDKT&PL": 50,
+                    "Tin học": 50
+                },
+                "default": 50
+            },
+            "question_counts": {
+                "by_subject": {
+                    "Toán": 34,
+                    "Tiếng Anh": 40,
+                    "Vật lí": 40,
+                    "Hóa học": 40,
+                    "Sinh học": 40,
+                    "Lịch sử": 40,
+                    "Địa lí": 40,
+                    "GDKT&PL": 40,
+                    "Tin học": 40
+                },
+                "default": 40
+            },
+            "total_score": 10
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ],
+            "tf_items_count": 4,
+            "short_answer_format": "number"
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "tn-thpt-2025-cuc-qlcl",
+            "quote": "Đề thi gồm 3 phần. Các môn trắc nghiệm sử dụng 3 dạng câu hỏi: nhiều lựa chọn (MCQ A-D), đúng/sai (4 ý mỗi câu), trả lời ngắn (đáp án chuẩn hóa). Thời gian: Văn 120 phút, Toán 90 phút 34 lệnh hỏi, Ngoại ngữ 50 phút 40 câu, môn khác 50 phút."
+        }
+    ]
+}

@@ -97,6 +97,15 @@ import { communityRoutes } from './routes/community.js';
 app.use('/community/*', authMiddleware);
 app.route('/community', communityRoutes);
 
+// Policy routes (multi-policy support)
+import { policyRoutes } from './routes/policies.js';
+app.route('/policies', policyRoutes); // Public - no auth required
+
+// Teacher Preferences routes
+import { preferencesRoutes } from './routes/preferences.js';
+app.use('/preferences/*', authMiddleware);
+app.route('/preferences', preferencesRoutes);
+
 // Get current user
 app.get('/me', (c) => {
     const user = c.get('user');

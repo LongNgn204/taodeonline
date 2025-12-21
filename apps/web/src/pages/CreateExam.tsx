@@ -1,14 +1,19 @@
 // Chú thích: Create Exam page - wizard tạo ma trận và đề thi - Revamped UI
+// Tích hợp Multi-Policy và Teacher Preferences
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight } from 'lucide-react';
+import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight, Settings2, FileCode } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { getAIConfig } from '../lib/ai-config';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
+import PolicySelector from '../components/PolicySelector';
+import TeacherNotesModal from '../components/TeacherNotesModal';
+import EvidencePanel from '../components/EvidencePanel';
+
 
 type Step = 'config' | 'matrix' | 'exam' | 'export';
 
@@ -46,9 +51,33 @@ export default function CreateExam() {
     const [apiKey] = useState(aiConfig.apiKey);
     const [numTopics, setNumTopics] = useState(4);
 
+    // Multi-Policy state
+    const [selectedPolicyId, setSelectedPolicyId] = useState('cv7991-2024');
+    const [showPrefsModal, setShowPrefsModal] = useState(false);
+    const [teacherPrefs, setTeacherPrefs] = useState<{
+        notes: string;
+        difficultyBias: 'easy' | 'balanced' | 'hard';
+        focusTopics: string[];
+        questionStyle: 'formal' | 'practical' | 'contextual';
+        exportFormat: 'word' | 'latex' | 'pdf';
+        includeHints: boolean;
+        shuffleQuestions: boolean;
+    }>({
+        notes: '',
+        difficultyBias: 'balanced',
+        focusTopics: [],
+        questionStyle: 'formal',
+        exportFormat: 'word',
+        includeHints: true,
+        shuffleQuestions: true,
+    });
+
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
+    const [showEvidencePanel, setShowEvidencePanel] = useState(false);
+
+
 
     async function handleGenerateMatrix() {
         if (!apiKey) {
@@ -214,6 +243,16 @@ export default function CreateExam() {
                                                 <p>• Mô hình: <span className="font-semibold font-mono">{model}</span></p>
                                             </div>
 
+                                            {/* Policy Selector */}
+                                            <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-500/20">
+                                                <PolicySelector
+                                                    selectedPolicyId={selectedPolicyId}
+                                                    onSelect={setSelectedPolicyId}
+                                                    mode="school_assessment"
+                                                    showPreview={true}
+                                                />
+                                            </div>
+
                                             <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-500/20 flex items-center gap-4">
                                                 <div className="flex-1">
                                                     <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Số chủ đề mong muốn</label>
@@ -227,6 +266,13 @@ export default function CreateExam() {
                                                         ))}
                                                     </select>
                                                 </div>
+                                                <button
+                                                    onClick={() => setShowPrefsModal(true)}
+                                                    className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline px-3 py-2 flex items-center gap-1"
+                                                >
+                                                    <Settings2 className="w-4 h-4" />
+                                                    Ghi chú mong muốn
+                                                </button>
                                                 <button
                                                     onClick={() => navigate('/settings')}
                                                     className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline px-3 py-2"
@@ -275,10 +321,15 @@ export default function CreateExam() {
                                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">Ma trận đề thi</h2>
                                     <p className="text-gray-500 text-sm">Xem và điều chỉnh ma trận trước khi sinh đề</p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 items-center">
                                     <div className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
                                         Chuẩn 7991
                                     </div>
+                                    <EvidencePanel
+                                        evidences={[]}
+                                        isOpen={showEvidencePanel}
+                                        onToggle={() => setShowEvidencePanel(!showEvidencePanel)}
+                                    />
                                 </div>
                             </div>
 
@@ -381,6 +432,15 @@ export default function CreateExam() {
                                     <Download className="w-5 h-5" />
                                     Tải về Word (Đề thi)
                                 </button>
+                                {teacherPrefs.exportFormat === 'latex' && (
+                                    <button
+                                        onClick={() => alert('LaTeX export - coming soon!')}
+                                        className="btn-secondary py-3 px-6 border-2 border-gray-300 dark:border-gray-600 flex items-center gap-2"
+                                    >
+                                        <FileCode className="w-5 h-5" />
+                                        Tải về LaTeX
+                                    </button>
+                                )}
                             </div>
 
                             <div className="pt-8">
@@ -395,6 +455,14 @@ export default function CreateExam() {
                     )}
                 </div>
             </div>
+
+            {/* Teacher Notes Modal */}
+            <TeacherNotesModal
+                isOpen={showPrefsModal}
+                onClose={() => setShowPrefsModal(false)}
+                onSave={(prefs) => setTeacherPrefs(prefs)}
+                initialPreferences={teacherPrefs}
+            />
         </div>
     );
 }

@@ -1,0 +1,68 @@
+{
+    "id": "tt24-2024",
+    "code": "TT24-2024",
+    "title": "Thông tư 24/2024/TT-BGDĐT - Quy chế thi TN THPT",
+    "issuer": "MOE",
+    "issuedDate": "2024-12-20",
+    "effectiveFrom": "2025-02-08",
+    "scope": [
+        "THPT"
+    ],
+    "mode": "graduation_exam",
+    "summary": "Quy chế thi tốt nghiệp THPT áp dụng từ năm 2025. Thí sinh thi 4 môn: 2 bắt buộc (Ngữ văn, Toán) và 2 tự chọn.",
+    "rules": {
+        "constraints": {
+            "duration": {
+                "by_subject": {
+                    "Ngữ văn": 120,
+                    "Toán": 90,
+                    "Vật lí": 50,
+                    "Hóa học": 50,
+                    "Sinh học": 50,
+                    "Lịch sử": 50,
+                    "Địa lí": 50,
+                    "GDKT&PL": 50,
+                    "Tiếng Anh": 50,
+                    "Tiếng Pháp": 50,
+                    "Tiếng Trung": 50,
+                    "Tiếng Nhật": 50,
+                    "Tiếng Hàn": 50,
+                    "Tin học": 50
+                },
+                "default": 50
+            },
+            "question_counts": {
+                "by_subject": {
+                    "Toán": 34,
+                    "Tiếng Anh": 40,
+                    "Vật lí": 40,
+                    "Hóa học": 40,
+                    "Sinh học": 40,
+                    "Lịch sử": 40,
+                    "Địa lí": 40,
+                    "GDKT&PL": 40,
+                    "Tin học": 40
+                },
+                "default": 40
+            },
+            "total_score": 10
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ],
+            "tf_items_count": 4,
+            "short_answer_format": "number"
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "tt24-2024-dieu8",
+            "page": 4,
+            "quote": "Thí sinh phải dự thi đủ các bài thi/môn thi quy định tại khoản 1 Điều này, gồm: 02 bài thi bắt buộc là Ngữ văn, Toán; 02 môn thi tự chọn trong số các môn: Ngoại ngữ, Lý, Hóa, Sinh, Lịch sử, Địa lý, GDKT&PL, Tin học."
+        }
+    ]
+}

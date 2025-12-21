@@ -1,0 +1,114 @@
+{
+    "cv7991_valid": {
+        "mode": "school_assessment",
+        "subject": "Hóa học",
+        "grade": 10,
+        "duration": 60,
+        "totalScore": 10,
+        "distribution": {
+            "MCQ": {
+                "points": 3,
+                "count": 12,
+                "pointsEach": 0.25
+            },
+            "TF": {
+                "points": 2,
+                "count": 2,
+                "statements": 4
+            },
+            "SHORT": {
+                "points": 2,
+                "count": 2,
+                "pointsEach": 1
+            },
+            "ESSAY": {
+                "points": 3,
+                "count": 1,
+                "pointsEach": 3
+            }
+        },
+        "cognitiveLevels": {
+            "NB": 40,
+            "TH": 30,
+            "VD": 30
+        },
+        "expected": {
+            "isValid": true,
+            "errors": []
+        }
+    },
+    "cv7991_invalid_duration": {
+        "mode": "school_assessment",
+        "subject": "Hóa học",
+        "grade": 10,
+        "duration": 45,
+        "totalScore": 10,
+        "expected": {
+            "isValid": false,
+            "errorCode": "INVALID_DURATION"
+        }
+    },
+    "cv7991_invalid_score": {
+        "mode": "school_assessment",
+        "subject": "Hóa học",
+        "grade": 10,
+        "duration": 60,
+        "totalScore": 12,
+        "expected": {
+            "isValid": false,
+            "errorCode": "INVALID_TOTAL_SCORE"
+        }
+    },
+    "tn2025_math_valid": {
+        "mode": "graduation_exam",
+        "subject": "Toán",
+        "grade": 12,
+        "duration": 90,
+        "questionCount": 34,
+        "distribution": {
+            "MCQ": 12,
+            "TF": 4,
+            "SHORT": 18
+        },
+        "expected": {
+            "isValid": true,
+            "errors": []
+        }
+    },
+    "tn2025_english_valid": {
+        "mode": "graduation_exam",
+        "subject": "Tiếng Anh",
+        "grade": 12,
+        "duration": 50,
+        "questionCount": 40,
+        "distribution": {
+            "MCQ": 40
+        },
+        "expected": {
+            "isValid": true,
+            "errors": []
+        }
+    },
+    "tn2025_invalid_duration": {
+        "mode": "graduation_exam",
+        "subject": "Toán",
+        "grade": 12,
+        "duration": 60,
+        "questionCount": 34,
+        "expected": {
+            "isValid": false,
+            "errorCode": "INVALID_DURATION"
+        }
+    },
+    "tn2025_invalid_count": {
+        "mode": "graduation_exam",
+        "subject": "Tiếng Anh",
+        "grade": 12,
+        "duration": 50,
+        "questionCount": 30,
+        "expected": {
+            "isValid": false,
+            "errorCode": "INVALID_QUESTION_COUNT"
+        }
+    }
+}

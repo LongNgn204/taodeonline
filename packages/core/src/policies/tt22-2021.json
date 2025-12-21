@@ -1,0 +1,39 @@
+{
+    "id": "tt22-2021",
+    "code": "TT22-2021",
+    "title": "Thông tư 22/2021/TT-BGDĐT - Quy định đánh giá học sinh THCS và THPT",
+    "issuer": "MOE",
+    "issuedDate": "2021-07-20",
+    "effectiveFrom": "2021-09-05",
+    "scope": [
+        "THCS",
+        "THPT"
+    ],
+    "mode": "school_assessment",
+    "summary": "Quy định về đánh giá học sinh THCS và THPT theo CTGDPT 2018. Thay thế TT58/2011 và TT26/2020. Quy định hình thức đánh giá thường xuyên và định kỳ.",
+    "rules": {
+        "constraints": {
+            "total_score": 10,
+            "cognitive_levels": {
+                "NB": 40,
+                "TH": 30,
+                "VD": 30
+            }
+        },
+        "question_types": {
+            "allowed": [
+                "MCQ",
+                "TF",
+                "SHORT",
+                "ESSAY"
+            ]
+        }
+    },
+    "evidenceRefs": [
+        {
+            "chunkId": "tt22-2021-dieu5",
+            "page": 2,
+            "quote": "Đánh giá định kỳ: Đánh giá kết quả giáo dục của học sinh sau một giai đoạn học tập, rèn luyện, thông qua các hình thức đánh giá bằng nhận xét hoặc đánh giá bằng nhận xét kết hợp với điểm số."
+        }
+    ]
+}
