@@ -60,7 +60,10 @@ export const GenerateMatrixRequestSchema = z.object({
     scope: z.array(z.string()).optional(), // Phạm vi chương/bài
     numTopics: z.number().int().min(2).max(15).default(4),
     policyPackId: z.string().optional(),
+    policyPackIds: z.array(z.string()).optional(),
     examMode: ExamModeSchema.default('SCHOOL_ASSESSMENT'),
+    curriculum: z.string().optional(),
+    teacherNote: z.string().max(1000).optional(),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10), // User's API key
@@ -71,7 +74,11 @@ export const GenerateExamRequestSchema = z.object({
     libraryId: z.string(),
     matrixJson: z.string(), // JSON string của matrix
     policyPackId: z.string().optional(),
+    policyPackIds: z.array(z.string()).optional(),
     examMode: ExamModeSchema.default('SCHOOL_ASSESSMENT'),
+    formId: ExamFormIdSchema.optional(),
+    curriculum: z.string().optional(),
+    teacherNote: z.string().max(1000).optional(),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10),

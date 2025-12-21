@@ -69,6 +69,124 @@ export const EXAM_FORM_TEMPLATES: Record<ExamFormId, FormTemplate> = {
             columns: 2,
         },
     },
+    cv7991_v1: {
+        formId: 'cv7991_v1',
+        header: {
+            leftLines: [
+                { text: 'SỞ GD&ĐT ....................', bold: true },
+                { text: 'TRƯỜNG THPT ....................', bold: true },
+            ],
+            rightLines: [
+                { text: '{examTitleUpper}', bold: true },
+                { text: 'Môn: {subject} - Lớp {grade}', bold: true },
+                { text: 'Theo CV 7991/BGDĐT-GDTrH', italics: true, size: 22 },
+                { text: 'Thời gian làm bài: {duration} phút', italics: true },
+                { text: '(Không kể thời gian phát đề)', italics: true, size: 20 },
+            ],
+            showSeparatorLine: true,
+            showStudentInfo: true,
+        },
+        sections: [
+            {
+                type: 'MCQ',
+                title: 'PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN',
+            },
+            {
+                type: 'TF',
+                title: 'PHẦN II. ĐÚNG/SAI',
+            },
+            {
+                type: 'SHORT',
+                title: 'PHẦN III. TRẢ LỜI NGẮN',
+            },
+            {
+                type: 'ESSAY',
+                title: 'PHẦN IV. TỰ LUẬN',
+            },
+        ],
+        numbering: {
+            mode: 'global',
+            startAt: 1,
+            questionLabelTemplate: 'Câu {n}: ',
+        },
+        typography: {
+            fontFamily: 'Times New Roman',
+            fontSize: 24,
+            headerFontSize: 26,
+            lineSpacing: 240,
+        },
+        spacing: {
+            headerAfter: 400,
+            sectionTitleBefore: 200,
+            sectionTitleAfter: 200,
+            questionBefore: 200,
+            optionIndent: 720,
+            columnGap: 720,
+            footerBefore: 400,
+        },
+        layout: {
+            columns: 2,
+        },
+    },
+    gdpt2018_v1: {
+        formId: 'gdpt2018_v1',
+        header: {
+            leftLines: [
+                { text: 'SỞ GD&ĐT ....................', bold: true },
+                { text: 'TRƯỜNG THPT ....................', bold: true },
+            ],
+            rightLines: [
+                { text: '{examTitleUpper}', bold: true },
+                { text: 'Môn: {subject} - Lớp {grade}', bold: true },
+                { text: 'Chương trình GDPT 2018', italics: true, size: 22 },
+                { text: 'Thời gian làm bài: {duration} phút', italics: true },
+                { text: '(Không kể thời gian phát đề)', italics: true, size: 20 },
+            ],
+            showSeparatorLine: true,
+            showStudentInfo: true,
+        },
+        sections: [
+            {
+                type: 'MCQ',
+                title: 'PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN',
+            },
+            {
+                type: 'TF',
+                title: 'PHẦN II. ĐÚNG/SAI',
+            },
+            {
+                type: 'SHORT',
+                title: 'PHẦN III. TRẢ LỜI NGẮN',
+            },
+            {
+                type: 'ESSAY',
+                title: 'PHẦN IV. TỰ LUẬN',
+            },
+        ],
+        numbering: {
+            mode: 'global',
+            startAt: 1,
+            questionLabelTemplate: 'Câu {n}: ',
+        },
+        typography: {
+            fontFamily: 'Times New Roman',
+            fontSize: 24,
+            headerFontSize: 26,
+            lineSpacing: 240,
+        },
+        spacing: {
+            headerAfter: 400,
+            sectionTitleBefore: 200,
+            sectionTitleAfter: 200,
+            questionBefore: 200,
+            optionIndent: 720,
+            columnGap: 720,
+            footerBefore: 400,
+        },
+        layout: {
+            columns: 2,
+        },
+    },
 };
 
 export function getFormTemplate(formId?: ExamFormId | string | null): FormTemplate {

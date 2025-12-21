@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { QuestionTypeSchema } from './matrix.js';
 
-export const ExamFormIdSchema = z.enum(['standard_v1']);
+export const ExamFormIdSchema = z.enum(['standard_v1', 'cv7991_v1', 'gdpt2018_v1']);
 
 export const FormHeaderLineSchema = z.object({
     text: z.string(),

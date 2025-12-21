@@ -1,6 +1,7 @@
 // Chú thích: Export đề thi sang LaTeX (.tex) theo form cơ bản
 
-import type { ExamContent, Question } from '@exam-matrix/shared';
+import type { ExamContent, FormHeaderLine, Question } from '@exam-matrix/shared';
+import { getFormTemplate } from '@exam-matrix/shared';
 
 const LATEX_SPECIAL_CHARS: Record<string, string> = {
     '\\': '\\textbackslash{}',
@@ -26,6 +27,26 @@ function escapeLatex(text: string): string {
 
 function formatQuestionPrompt(prefix: string, prompt: string): string {
     return `\\textbf{${prefix}} ${escapeLatex(prompt)}`;
+}
+
+function applyHeaderTokens(text: string, exam: ExamContent): string {
+    return text
+        .replace(/\{examTitleUpper\}/g, exam.title.toUpperCase())
+        .replace(/\{examTitle\}/g, exam.title)
+        .replace(/\{subject\}/g, exam.subject)
+        .replace(/\{grade\}/g, String(exam.grade))
+        .replace(/\{duration\}/g, String(exam.duration));
+}
+
+function renderHeaderLine(line: FormHeaderLine, exam: ExamContent): string {
+    let content = escapeLatex(applyHeaderTokens(line.text, exam));
+    if (line.bold) {
+        content = `\\textbf{${content}}`;
+    }
+    if (line.italics) {
+        content = `\\textit{${content}}`;
+    }
+    return content;
 }
 
 function renderMCQ(question: Question, index: number): string[] {
@@ -89,6 +110,7 @@ function renderQuestion(question: Question, index: number): string[] {
 
 export function exportExamToLatex(exam: ExamContent): string {
     const lines: string[] = [];
+    const template = getFormTemplate(exam.formId);
 
     lines.push('\\documentclass[12pt]{article}');
     lines.push('\\usepackage[utf8]{inputenc}');
@@ -104,28 +126,38 @@ export function exportExamToLatex(exam: ExamContent): string {
     // Header form
     lines.push('\\begin{tabular}{p{0.45\\textwidth} p{0.55\\textwidth}}');
     lines.push('\\begin{minipage}[t]{0.45\\textwidth}\\centering');
-    lines.push('\\textbf{SỞ GD\&ĐT ....................} \\\\');
-    lines.push('\\textbf{TRƯỜNG THPT ....................} \\\\');
-    lines.push('\\textbf{\\rule{6cm}{0.4pt}}');
+    for (const line of template.header.leftLines) {
+        lines.push(`${renderHeaderLine(line, exam)} \\\\`);
+    }
+    if (template.header.showSeparatorLine) {
+        lines.push('\\textbf{\\rule{6cm}{0.4pt}}');
+    }
     lines.push('\\end{minipage} &');
     lines.push('\\begin{minipage}[t]{0.55\\textwidth}\\centering');
-    lines.push(`\\textbf{${escapeLatex(exam.title.toUpperCase())}} \\\\`);
-    lines.push(`\\textbf{Môn: ${escapeLatex(exam.subject)} - Lớp ${exam.grade}} \\\\`);
-    lines.push(`\\textit{Thời gian làm bài: ${exam.duration} phút} \\\\`);
-    lines.push('\\textit{(Không kể thời gian phát đề)}');
+    for (const line of template.header.rightLines) {
+        lines.push(`${renderHeaderLine(line, exam)} \\\\`);
+    }
     lines.push('\\end{minipage} \\\\');
     lines.push('\\end{tabular}');
 
     lines.push('');
-    lines.push('Họ và tên thí sinh: ..............................................................');
-    lines.push('Số báo danh: .....................');
+    if (template.header.showStudentInfo) {
+        lines.push('Họ và tên thí sinh: ..............................................................');
+        lines.push('Số báo danh: .....................');
+    }
     lines.push('\\vspace{0.5cm}');
 
     let questionIndex = 1;
-    for (const section of exam.sections) {
-        lines.push(`\\section*{${escapeLatex(section.title)}}`);
-        if (section.instructions) {
-            lines.push(`\\textit{${escapeLatex(section.instructions)}}`);
+    for (const templateSection of template.sections) {
+        const section =
+            exam.sections.find((s) => s.type === templateSection.type) ||
+            exam.sections.find((s) => s.title === templateSection.title);
+        if (!section) continue;
+
+        lines.push(`\\section*{${escapeLatex(templateSection.title)}}`);
+        const instructions = templateSection.instructions ?? section.instructions;
+        if (instructions) {
+            lines.push(`\\textit{${escapeLatex(instructions)}}`);
         }
         lines.push('');
 
@@ -143,8 +175,13 @@ export function exportExamToLatex(exam: ExamContent): string {
     lines.push('\\newpage');
     lines.push('\\section*{ĐÁP ÁN}');
 
-    for (const section of exam.sections) {
-        lines.push(`\\textbf{${escapeLatex(section.title)}}`);
+    for (const templateSection of template.sections) {
+        const section =
+            exam.sections.find((s) => s.type === templateSection.type) ||
+            exam.sections.find((s) => s.title === templateSection.title);
+        if (!section) continue;
+
+        lines.push(`\\textbf{${escapeLatex(templateSection.title)}}`);
         lines.push('\\begin{enumerate}[label=\\textbf{Câu \\arabic*:}, leftmargin=*]');
         for (const question of section.questions) {
             lines.push(`\\item ${escapeLatex(question.answerKey)} \\textit{(${question.points} điểm)}`);

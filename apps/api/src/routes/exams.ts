@@ -76,7 +76,19 @@ exams.post('/generate-matrix', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, scope, numTopics, provider, model, apiKey, policyPackId, examMode } = parsed.data;
+    const {
+        libraryId,
+        scope,
+        numTopics,
+        provider,
+        model,
+        apiKey,
+        policyPackId,
+        policyPackIds,
+        examMode,
+        curriculum,
+        teacherNote,
+    } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -109,6 +121,7 @@ exams.post('/generate-matrix', async (c) => {
         const policyContext = await buildPolicyContext({
             db: c.env.DB,
             packId: policyPackId,
+            packIds: policyPackIds,
             examMode,
             subject: library.subject,
             grade: library.grade,
@@ -122,6 +135,8 @@ exams.post('/generate-matrix', async (c) => {
             constraints: policyContext.matrixConstraints,
             contextChunks,
             policyText: policyContext.matrixPolicyText,
+            curriculum,
+            teacherNote,
             provider,
             model,
             apiKey,
@@ -137,6 +152,7 @@ exams.post('/generate-matrix', async (c) => {
             libraryId,
             examMode: policyContext.mode,
             policyPackId: policyContext.packId || null,
+            policyPackIds: policyContext.packIds || null,
             provider,
             model,
             topicsCount: result.matrix.topics.length,
@@ -176,7 +192,19 @@ exams.post('/generate-exam', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, matrixJson, provider, model, apiKey, policyPackId, examMode } = parsed.data;
+    const {
+        libraryId,
+        matrixJson,
+        provider,
+        model,
+        apiKey,
+        policyPackId,
+        policyPackIds,
+        examMode,
+        formId,
+        curriculum,
+        teacherNote,
+    } = parsed.data;
 
     // Parse matrix
     const matrix = safeJsonParse<Matrix | null>(matrixJson, null);
@@ -205,6 +233,7 @@ exams.post('/generate-exam', async (c) => {
         const policyContext = await buildPolicyContext({
             db: c.env.DB,
             packId: policyPackId,
+            packIds: policyPackIds,
             examMode,
             subject: matrix.subject,
             grade: matrix.grade,
@@ -218,6 +247,9 @@ exams.post('/generate-exam', async (c) => {
             matrix,
             chunks,
             policyText: policyContext.examPolicyText,
+            formId,
+            curriculum,
+            teacherNote,
             provider,
             model,
             apiKey,
@@ -236,6 +268,7 @@ exams.post('/generate-exam', async (c) => {
             libraryId,
             examMode: policyContext.mode,
             policyPackId: policyContext.packId || null,
+            policyPackIds: policyContext.packIds || null,
             provider,
             model,
             sectionsCount: result.exam.sections.length,

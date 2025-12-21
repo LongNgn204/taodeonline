@@ -134,7 +134,7 @@ exports.post('/:examId/exam-tex', async (c) => {
 
     const exam = await c.env.DB.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?')
         .bind(examId, user.id)
-        .first<{ id: string; exam_json: string; title: string }>();
+        .first<{ id: string; exam_json: string; title: string; form_id?: string }>();
 
     if (!exam || !exam.exam_json) {
         return c.json({ error: 'no_exam_content', message: 'Chưa có nội dung đề thi' }, 400);
@@ -143,6 +143,9 @@ exports.post('/:examId/exam-tex', async (c) => {
     const examContent = safeJsonParse<ExamContent | null>(exam.exam_json, null);
     if (!examContent) {
         return c.json({ error: 'invalid_exam', message: 'Nội dung đề thi không hợp lệ' }, 400);
+    }
+    if (!examContent.formId && exam.form_id) {
+        examContent.formId = exam.form_id;
     }
 
     const latexContent = exportExamToLatex(examContent);

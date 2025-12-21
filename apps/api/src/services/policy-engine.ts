@@ -57,6 +57,7 @@ export type MatrixPolicySummary = {
 export type PolicyContext = {
     mode: ExamMode;
     packId?: string;
+    packIds?: string[];
     rules: PolicyRules;
     blueprint?: Blueprint | null;
     matrixPolicySummary: MatrixPolicySummary;
@@ -177,6 +178,39 @@ export async function resolvePolicyPack(db: D1Database, packId?: string) {
         mode: normalizeMode(pack.mode),
         rules: mergedRules as PolicyRules,
         evidenceMap,
+    };
+}
+
+export async function resolvePolicyPacks(db: D1Database, packIds?: string[]) {
+    if (!packIds || packIds.length === 0) return null;
+
+    // Chú thích: Cho phép ghép nhiều gói công văn theo thứ tự người dùng chọn.
+    const uniquePackIds = [...new Set(packIds.filter(Boolean))];
+    if (uniquePackIds.length === 0) return null;
+
+    let mergedRules: PolicyRules = {};
+    const resolvedPackIds: string[] = [];
+    let resolvedMode: ExamMode | null = null;
+
+    for (const packId of uniquePackIds) {
+        const resolved = await resolvePolicyPack(db, packId);
+        if (!resolved) continue;
+
+        if (!resolvedMode) {
+            resolvedMode = resolved.mode;
+        }
+
+        mergedRules = deepMerge(mergedRules as Record<string, unknown>, resolved.rules as Record<string, unknown>) as PolicyRules;
+        resolvedPackIds.push(resolved.packId);
+    }
+
+    if (resolvedPackIds.length === 0) return null;
+
+    return {
+        packIds: resolvedPackIds,
+        packId: resolvedPackIds[0],
+        mode: resolvedMode || 'SCHOOL_ASSESSMENT',
+        rules: mergedRules,
     };
 }
 
@@ -313,6 +347,7 @@ function resolveLevelPercent(rules: PolicyRules) {
 export async function buildPolicyContext(input: {
     db: D1Database;
     packId?: string;
+    packIds?: string[];
     examMode?: ExamMode | string;
     subject: string;
     grade: number;
@@ -321,7 +356,10 @@ export async function buildPolicyContext(input: {
     fallbackDuration: number;
     blueprintId?: string;
 }) {
-    const resolvedPack = await resolvePolicyPack(input.db, input.packId);
+    const resolvedPack =
+        (input.packIds && input.packIds.length > 0
+            ? await resolvePolicyPacks(input.db, input.packIds)
+            : await resolvePolicyPack(input.db, input.packId));
     const mode = resolvedPack?.mode || normalizeMode(input.examMode);
     const rules = resolvedPack?.rules || {};
     const blueprint = await loadBlueprint(input.db, mode, input.subject, input.blueprintId);
@@ -356,6 +394,7 @@ export async function buildPolicyContext(input: {
     return {
         mode,
         packId: resolvedPack?.packId,
+        packIds: resolvedPack?.packIds,
         rules,
         blueprint,
         matrixPolicySummary,

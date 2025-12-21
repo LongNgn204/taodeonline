@@ -10,6 +10,7 @@ export const MATRIX_AGENT_VERSION = 'matrix-agent-v1.0.0';
 
 // System prompt cho MatrixAgent
 const MATRIX_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo policy/blueprint.
+Người dùng là giáo viên cần ma trận chuẩn để biên soạn đề thi đúng chuẩn.
 
 NHIỆM VỤ: Tạo ma trận đề kiểm tra cho môn học và lớp được yêu cầu, tuân thủ quy tắc được cung cấp ở phần "QUY TẮC MA TRẬN".
 
@@ -30,18 +31,30 @@ OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
 function buildUserPrompt(
     constraints: MatrixConstraints,
     contextChunks: { titleHint: string; text: string }[],
-    policyText?: string
+    policyText?: string,
+    curriculum?: string,
+    teacherNote?: string
 ): string {
     const chunksSummary = contextChunks
         .slice(0, 10)
         .map((c, i) => `[${i + 1}] ${c.titleHint}: ${c.text.slice(0, 200)}...`)
         .join('\n');
 
+    const curriculumHint = curriculum?.trim()
+        ? `Chương trình/chuẩn áp dụng: ${curriculum.trim()}`
+        : '';
+
+    const noteHint = teacherNote?.trim()
+        ? `Ghi chú của giáo viên: ${teacherNote.trim()}`
+        : '';
+
     return `Môn học: ${constraints.subject}
 Lớp: ${constraints.grade}
 Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
 ${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
+${curriculumHint ? `\n${curriculumHint}` : ''}
+${noteHint ? `\n${noteHint}` : ''}
 
 QUY TẮC MA TRẬN (bắt buộc):
 ${policyText || 'Theo cấu hình mặc định của hệ thống.'}
@@ -100,6 +113,8 @@ export interface MatrixAgentInput {
     constraints: MatrixConstraints;
     contextChunks: { titleHint: string; text: string }[];
     policyText?: string;
+    curriculum?: string;
+    teacherNote?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -116,7 +131,13 @@ export interface MatrixAgentOutput {
  * Sinh ma trận đề từ constraints và context
  */
 export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAgentOutput> {
-    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks, input.policyText);
+    const userPrompt = buildUserPrompt(
+        input.constraints,
+        input.contextChunks,
+        input.policyText,
+        input.curriculum,
+        input.teacherNote
+    );
 
     const request: ChatRequest = {
         provider: input.provider,

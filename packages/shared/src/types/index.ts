@@ -58,7 +58,7 @@ export type CognitiveLevel = 'NB' | 'TH' | 'VD'; // Nhận biết, Thông hiểu
 export type QuestionType = 'MCQ' | 'TF' | 'SHORT' | 'ESSAY';
 
 // ===== Exam Form Template =====
-export type ExamFormId = 'standard_v1';
+export type ExamFormId = 'standard_v1' | 'cv7991_v1' | 'gdpt2018_v1';
 
 export interface FormHeaderLine {
     text: string;

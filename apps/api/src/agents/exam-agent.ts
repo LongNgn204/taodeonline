@@ -7,6 +7,8 @@ import {
     type ExamContent,
     type Matrix,
     type Question,
+    getFormTemplate,
+    type FormTemplate,
 } from '@exam-matrix/shared';
 
 // Prompt version
@@ -14,6 +16,7 @@ export const EXAM_AGENT_VERSION = 'exam-agent-v1.0.0';
 
 // System prompt cho ExamAgent
 const EXAM_SYSTEM_PROMPT = `Bạn là giáo viên chuyên môn, nhiệm vụ sinh câu hỏi kiểm tra từ ma trận đề theo policy/blueprint.
+Người dùng là giáo viên đang cần bộ đề chuẩn và rõ ràng để sử dụng ngay trên lớp.
 
 QUY TẮC VỀ NỘI DUNG:
 1. Mỗi câu hỏi PHẢI dựa trên nội dung tài liệu được cung cấp
@@ -53,7 +56,10 @@ OUTPUT: JSON theo schema ExamContent, KHÔNG có text giải thích.`;
 function buildExamPrompt(
     matrix: Matrix,
     chunks: { id: string; titleHint: string; text: string }[],
-    policyText?: string
+    policyText?: string,
+    formTemplate?: FormTemplate,
+    curriculum?: string,
+    teacherNote?: string
 ): string {
     const chunksList = chunks
         .map((c) => `[${c.id}] ${c.titleHint}:\n${c.text}`)
@@ -75,12 +81,34 @@ function buildExamPrompt(
         )
         .join('\n');
 
+    const formHint = formTemplate
+        ? `FORM ĐỀ (bắt buộc):
+- formId: ${formTemplate.formId}
+- Section order: ${formTemplate.sections.map((s) => `${s.title} (${s.type})`).join(' | ')}
+- Quy tắc đánh số: ${formTemplate.numbering.questionLabelTemplate}`
+        : '';
+
+    const noteHint = teacherNote?.trim()
+        ? `GHI CHÚ CỦA GIÁO VIÊN:
+- ${teacherNote.trim()}`
+        : '';
+
+    const curriculumHint = curriculum?.trim()
+        ? `CHƯƠNG TRÌNH/CHUẨN ÁP DỤNG:
+- ${curriculum.trim()}`
+        : '';
+
     return `MA TRẬN ĐỀ:
 Môn: ${matrix.subject} - Lớp ${matrix.grade}
 Thời gian: ${matrix.duration} phút
+${curriculumHint ? `\n${curriculumHint}\n` : ''}
 
 QUY TẮC SINH ĐỀ (bắt buộc):
 ${policyText || 'Theo cấu hình mặc định của hệ thống.'}
+
+${formHint ? `\n${formHint}\n` : ''}
+
+${noteHint ? `\n${noteHint}\n` : ''}
 
 Phân bổ câu hỏi:
 ${matrixSummary}
@@ -166,6 +194,9 @@ export interface ExamAgentInput {
     matrix: Matrix;
     chunks: { id: string; titleHint: string; text: string }[];
     policyText?: string;
+    formId?: string;
+    curriculum?: string;
+    teacherNote?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -182,7 +213,15 @@ export interface ExamAgentOutput {
  * Sinh đề thi từ ma trận và tài liệu
  */
 export async function generateExam(input: ExamAgentInput): Promise<ExamAgentOutput> {
-    const userPrompt = buildExamPrompt(input.matrix, input.chunks, input.policyText);
+    const formTemplate = input.formId ? getFormTemplate(input.formId) : undefined;
+    const userPrompt = buildExamPrompt(
+        input.matrix,
+        input.chunks,
+        input.policyText,
+        formTemplate,
+        input.curriculum,
+        input.teacherNote
+    );
 
     const request: ChatRequest = {
         provider: input.provider,
@@ -207,8 +246,10 @@ export async function generateExam(input: ExamAgentInput): Promise<ExamAgentOutp
             tokensOut: result.usage.tokensOut,
         });
 
+        const nextExam = input.formId ? { ...result.data, formId: input.formId } : result.data;
+
         return {
-            exam: result.data,
+            exam: nextExam,
             tokensIn: result.usage.tokensIn,
             tokensOut: result.usage.tokensOut,
             latencyMs: result.usage.latencyMs,

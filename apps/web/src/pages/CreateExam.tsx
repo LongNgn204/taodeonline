@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight } from 'lucide-react';
+import type { ExamFormId } from '@exam-matrix/shared';
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { getAIConfig } from '../lib/ai-config';
@@ -50,7 +51,11 @@ export default function CreateExam() {
     const [numTopics, setNumTopics] = useState(4);
     const [examMode, setExamMode] = useState<ExamMode>('SCHOOL_ASSESSMENT');
     const [policyPacks, setPolicyPacks] = useState<PolicyPack[]>([]);
-    const [policyPackId, setPolicyPackId] = useState<string>('');
+    const [policyPackIds, setPolicyPackIds] = useState<string[]>([]);
+    const [formId, setFormId] = useState<ExamFormId>('standard_v1');
+    const [curriculum, setCurriculum] = useState('Chương trình GDPT 2018');
+    const [teacherNote, setTeacherNote] = useState('');
+    const [showTeacherNote, setShowTeacherNote] = useState(false);
 
     useEffect(() => {
         async function fetchPolicyPacks() {
@@ -67,6 +72,28 @@ export default function CreateExam() {
 
         fetchPolicyPacks();
     }, []);
+
+    const visiblePolicyPacks = policyPacks.filter((pack) =>
+        !pack.mode || pack.mode.toUpperCase().includes(examMode === 'GRADUATION_2025' ? 'GRADUATION' : 'SCHOOL')
+    );
+
+    const selectedPackLabels = policyPackIds
+        .map((id) => policyPacks.find((pack) => pack.id === id)?.name)
+        .filter(Boolean)
+        .join(', ');
+    const matrixBadgeLabel = policyPackIds.length ? (selectedPackLabels || 'Đã chọn gói công văn') : 'Chuẩn hệ thống';
+
+    const formOptions: { id: ExamFormId; label: string }[] = [
+        { id: 'standard_v1', label: 'Form chuẩn (mặc định)' },
+        { id: 'cv7991_v1', label: 'Form chuẩn CV 7991' },
+        { id: 'gdpt2018_v1', label: 'Form chuẩn CTGDPT 2018' },
+    ];
+
+    function togglePolicyPack(packId: string) {
+        setPolicyPackIds((prev) =>
+            prev.includes(packId) ? prev.filter((id) => id !== packId) : [...prev, packId]
+        );
+    }
 
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
@@ -85,7 +112,9 @@ export default function CreateExam() {
                 libraryId,
                 numTopics,
                 examMode,
-                policyPackId: policyPackId || undefined,
+                policyPackIds: policyPackIds.length ? policyPackIds : undefined,
+                curriculum: curriculum || undefined,
+                teacherNote: teacherNote.trim() || undefined,
                 provider,
                 model,
                 apiKey,
@@ -112,7 +141,10 @@ export default function CreateExam() {
                 libraryId,
                 matrixJson: JSON.stringify(matrix),
                 examMode,
-                policyPackId: policyPackId || undefined,
+                policyPackIds: policyPackIds.length ? policyPackIds : undefined,
+                formId,
+                curriculum: curriculum || undefined,
+                teacherNote: teacherNote.trim() || undefined,
                 provider,
                 model,
                 apiKey,
@@ -140,6 +172,7 @@ export default function CreateExam() {
                 matrixJson: JSON.stringify(matrix),
                 examJson: exam ? JSON.stringify(exam) : undefined,
                 status: 'draft',
+                formId,
             });
             const data = await saveRes.json();
             if (saveRes.ok) {
@@ -187,7 +220,7 @@ export default function CreateExam() {
                         Trình tạo đề thông minh
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                        Tạo ma trận và đề thi chuẩn 7991 chỉ trong vài phút
+                        Tạo ma trận và đề thi theo nhiều công văn, form đề chuẩn chỉ trong vài phút
                     </p>
                 </div>
 
@@ -286,7 +319,7 @@ export default function CreateExam() {
                                                         onChange={(e) => {
                                                             const nextMode = e.target.value as ExamMode;
                                                             setExamMode(nextMode);
-                                                            setPolicyPackId('');
+                                                            setPolicyPackIds([]);
                                                         }}
                                                         className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
                                                     >
@@ -334,28 +367,85 @@ export default function CreateExam() {
                             )}
 
                             <div className="bg-white dark:bg-black/20 border border-gray-100 dark:border-white/10 rounded-2xl p-6 max-w-2xl mx-auto">
-                                <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-6">
                                     <div>
-                                        <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Gói công văn</label>
-                                        <select
-                                            value={policyPackId}
-                                            onChange={(e) => setPolicyPackId(e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                                        >
-                                            <option value="">Mặc định hệ thống</option>
-                                            {policyPacks
-                                                .filter((pack) => !pack.mode || pack.mode.toUpperCase().includes(examMode === 'GRADUATION_2025' ? 'GRADUATION' : 'SCHOOL'))
-                                                .map((pack) => (
-                                                    <option key={pack.id} value={pack.id}>
+                                        <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2 block">Gói công văn (có thể chọn nhiều)</label>
+                                        {visiblePolicyPacks.length > 0 ? (
+                                            <div className="grid gap-2">
+                                                {visiblePolicyPacks.map((pack) => (
+                                                    <label
+                                                        key={pack.id}
+                                                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={policyPackIds.includes(pack.id)}
+                                                            onChange={() => togglePolicyPack(pack.id)}
+                                                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                        />
                                                         {pack.name}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                Chưa có gói công văn phù hợp cho chế độ này.
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                            {policyPackIds.length
+                                                ? `Đang áp dụng: ${selectedPackLabels}`
+                                                : 'Chưa chọn gói, hệ thống dùng cấu hình mặc định.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Form đề</label>
+                                            <select
+                                                value={formId}
+                                                onChange={(e) => setFormId(e.target.value as ExamFormId)}
+                                                className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                                            >
+                                                {formOptions.map((option) => (
+                                                    <option key={option.id} value={option.id}>
+                                                        {option.label}
                                                     </option>
                                                 ))}
-                                        </select>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Chương trình</label>
+                                            <select
+                                                value={curriculum}
+                                                onChange={(e) => setCurriculum(e.target.value)}
+                                                className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                                            >
+                                                <option value="Chương trình GDPT 2018">Chương trình GDPT 2018</option>
+                                                <option value="Chương trình 2006">Chương trình 2006 (tham khảo)</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                                        {policyPackId
-                                            ? 'Đã chọn gói công văn để áp policy/blueprint.'
-                                            : 'Chưa chọn gói, hệ thống dùng cấu hình mặc định.'}
+
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTeacherNote((prev) => !prev)}
+                                            className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                                        >
+                                            {showTeacherNote ? 'Ẩn ghi chú' : 'Thêm ghi chú mong muốn'}
+                                        </button>
+                                        {showTeacherNote && (
+                                            <textarea
+                                                value={teacherNote}
+                                                onChange={(e) => setTeacherNote(e.target.value)}
+                                                placeholder="Ví dụ: ưu tiên câu hỏi vận dụng, tránh dạng bẫy, bám sát chương 2..."
+                                                className="mt-3 w-full min-h-[120px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 p-3 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                                            />
+                                        )}
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                            Ghi chú giúp AI hiểu rõ bối cảnh giáo viên và mong muốn về dạng câu hỏi.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -371,7 +461,7 @@ export default function CreateExam() {
                                 </div>
                                 <div className="flex gap-2">
                                     <div className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
-                                        Chuẩn 7991
+                                        {matrixBadgeLabel}
                                     </div>
                                 </div>
                             </div>
