@@ -14,6 +14,7 @@ import { blueprintRoutes } from './routes/blueprints.js';
 import { packRoutes } from './routes/packs.js';
 import { examRoutesV2 } from './routes/exams_new.js';
 import aiHubRoutes from './routes/aiHub.js';
+import { curriculumOutcomesRoutes } from './routes/curriculum_outcomes.js';
 import { authMiddleware } from './middleware/auth.js';
 import type { Env } from './types.js';
 
@@ -55,6 +56,7 @@ app.use('/exams/*', authMiddleware);
 app.use('/exports/*', authMiddleware);
 app.use('/grading/*', authMiddleware);
 app.use('/me', authMiddleware);
+app.use('/curriculum-outcomes/*', authMiddleware);
 
 app.route('/libraries', libraryRoutes);
 app.route('/documents', documentRoutes);
@@ -62,6 +64,7 @@ app.route('/exams', examRoutes);
 app.route('/exports', exportRoutes);
 app.route('/exports', exportRoutes);
 app.route('/grading', gradingRoutes);
+app.route('/curriculum-outcomes', curriculumOutcomesRoutes);
 
 // New Routes (Multi-doc + 2 Modes)
 app.route('/blueprints', blueprintRoutes);

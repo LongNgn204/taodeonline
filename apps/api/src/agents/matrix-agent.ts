@@ -2,7 +2,7 @@
 // Sử dụng AI adapter với prompt template versioned
 
 import { chatJson, type ChatRequest } from '../adapters/ai.js';
-import { MatrixSchema, type Matrix, type MatrixConstraints } from '@exam-matrix/shared';
+import { MatrixSchema, type Matrix, type MatrixConstraints, type CurriculumOutcome } from '@exam-matrix/shared';
 
 // Prompt version để tracking và rollback
 export const MATRIX_AGENT_VERSION = 'matrix-agent-v1.0.0';
@@ -35,21 +35,37 @@ QUY TẮC:
 
 OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
 
+function formatOutcomesForPrompt(outcomes: CurriculumOutcome[], maxItems = 60): string {
+    const limited = outcomes.slice(0, maxItems);
+    const lines = limited.map((o, i) =>
+        `[${i + 1}] (${o.id}) Chủ đề: ${o.topic} | Đơn vị kiến thức: ${o.unit} | Yêu cầu cần đạt: ${o.outcome}`
+    );
+    const truncated = outcomes.length > maxItems ? `\n... (đã rút gọn ${outcomes.length - maxItems} outcomes)` : '';
+    return lines.join('\n') + truncated;
+}
+
 // User prompt template
 function buildUserPrompt(
     constraints: MatrixConstraints,
-    contextChunks: { titleHint: string; text: string }[]
+    contextChunks: { titleHint: string; text: string }[],
+    outcomes?: CurriculumOutcome[]
 ): string {
     const chunksSummary = contextChunks
         .slice(0, 10)
         .map((c, i) => `[${i + 1}] ${c.titleHint}: ${c.text.slice(0, 200)}...`)
         .join('\n');
 
+    const hasOutcomes = Boolean(outcomes && outcomes.length > 0);
+    const outcomesBlock = hasOutcomes
+        ? `\nCTGDPT 2018 - DANH SÁCH YÊU CẦU CẦN ĐẠT (tham chiếu để bám chuẩn):\n${formatOutcomesForPrompt(outcomes || [])}\n\nYÊU CẦU BẮT BUỘC:\n- Mỗi đơn vị kiến thức phải map ít nhất 1 outcomeIds (danh sách ID ở trên).\n- Ưu tiên chọn outcomeIds cùng chủ đề.\n`
+        : '';
+
     return `Môn học: ${constraints.subject}
 Lớp: ${constraints.grade}
 Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
 ${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
+${outcomesBlock}
 
 NỘI DUNG TÀI LIỆU (tham khảo để chọn chủ đề/đơn vị kiến thức):
 ${chunksSummary || 'Không có tài liệu upload. Hãy dùng kiến thức chung của môn học.'}
@@ -81,7 +97,8 @@ const OUTPUT_SCHEMA_HINT = `
           "MCQ": { "NB": 2, "TH": 1, "VD": 0 },
           "TF": { "NB": 1, "TH": 0, "VD": 0 },
           "SHORT": { "NB": 0, "TH": 1, "VD": 0 },
-          "ESSAY": { "NB": 0, "TH": 0, "VD": 1 }
+          "ESSAY": { "NB": 0, "TH": 0, "VD": 1 },
+          "outcomeIds": ["outcome_1", "outcome_2"]
         }
       ],
       "percentScore": 25
@@ -107,6 +124,7 @@ export interface MatrixAgentInput {
     provider: string;
     model: string;
     apiKey: string;
+    outcomes?: CurriculumOutcome[];
 }
 
 export interface MatrixAgentOutput {
@@ -120,7 +138,7 @@ export interface MatrixAgentOutput {
  * Sinh ma trận đề từ constraints và context
  */
 export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAgentOutput> {
-    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks);
+    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks, input.outcomes);
 
     const request: ChatRequest = {
         provider: input.provider,
@@ -160,7 +178,10 @@ export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAge
 /**
  * Validate và tự động sửa ma trận nếu không khớp ràng buộc
  */
-export function validateMatrix(matrix: Matrix): { valid: boolean; errors: string[] } {
+export function validateMatrix(
+    matrix: Matrix,
+    options?: { requireOutcomeMapping?: boolean }
+): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     // Check tổng điểm
@@ -189,6 +210,16 @@ export function validateMatrix(matrix: Matrix): { valid: boolean; errors: string
     const totalPercent = matrix.topics.reduce((sum: number, t: { percentScore: number }) => sum + t.percentScore, 0);
     if (totalPercent !== 100) {
         errors.push(`Tổng % chủ đề = ${totalPercent}%, phải = 100%`);
+    }
+
+    if (options?.requireOutcomeMapping) {
+        matrix.topics.forEach((topic) => {
+            topic.units.forEach((unit) => {
+                if (!unit.outcomeIds || unit.outcomeIds.length === 0) {
+                    errors.push(`Đơn vị "${unit.name}" (${topic.name}) thiếu outcomeIds`);
+                }
+            });
+        });
     }
 
     return {

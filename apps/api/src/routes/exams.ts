@@ -10,7 +10,7 @@ import {
     isoNow,
     safeJsonParse,
 } from '@exam-matrix/shared';
-import type { Matrix, ExamContent } from '@exam-matrix/shared';
+import type { Matrix, ExamContent, CurriculumOutcome } from '@exam-matrix/shared';
 import type { Env } from '../types.js';
 import { generateMatrix, validateMatrix } from '../agents/matrix-agent.js';
 import { generateExam } from '../agents/exam-agent.js';
@@ -71,7 +71,7 @@ exams.post('/generate-matrix', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, scope, numTopics, provider, model, apiKey } = parsed.data;
+    const { libraryId, scope, numTopics, provider, model, apiKey, useCurriculum } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -100,6 +100,37 @@ exams.post('/generate-matrix', async (c) => {
         text: c.text,
     }));
 
+    let outcomes: CurriculumOutcome[] = [];
+    if (useCurriculum) {
+        let outcomeQuery =
+            'SELECT id, subject, grade, topic, outcome, unit FROM curriculum_outcomes WHERE subject = ? AND grade = ?';
+        const outcomeParams: (string | number)[] = [library.subject, library.grade];
+
+        if (scope && scope.length > 0) {
+            const placeholders = scope.map(() => '?').join(', ');
+            outcomeQuery += ` AND topic IN (${placeholders})`;
+            outcomeParams.push(...scope);
+        }
+
+        outcomeQuery += ' ORDER BY topic ASC, unit ASC';
+
+        const outcomesResult = await c.env.DB.prepare(outcomeQuery)
+            .bind(...outcomeParams)
+            .all<CurriculumOutcome>();
+
+        outcomes = outcomesResult.results || [];
+
+        if (outcomes.length === 0) {
+            return c.json(
+                {
+                    error: 'no_outcomes',
+                    message: 'Chưa có CTGDPT outcomes cho môn/lớp này',
+                },
+                400
+            );
+        }
+    }
+
     try {
         // Gọi MatrixAgent để sinh ma trận
         const result = await generateMatrix({
@@ -109,15 +140,17 @@ exams.post('/generate-matrix', async (c) => {
                 duration: library.duration_minutes,
                 numTopics: numTopics || 4,
                 scope: scope || undefined,
+                useCurriculum: useCurriculum || false,
             },
             contextChunks,
             provider,
             model,
             apiKey,
+            outcomes: outcomes.length > 0 ? outcomes : undefined,
         });
 
         // Validate ma trận
-        const validation = validateMatrix(result.matrix);
+        const validation = validateMatrix(result.matrix, { requireOutcomeMapping: useCurriculum });
         if (!validation.valid) {
             console.warn('[exam] matrix validation warnings:', validation.errors);
         }

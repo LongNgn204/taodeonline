@@ -9,6 +9,7 @@ import { getAIConfig } from '../lib/ai-config';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
+import type { CurriculumOutcome, Library } from '@exam-matrix/shared';
 
 type Step = 'config' | 'matrix' | 'exam' | 'export';
 
@@ -45,25 +46,116 @@ export default function CreateExam() {
     const [model] = useState(aiConfig.modelId);
     const [apiKey] = useState(aiConfig.apiKey);
     const [numTopics, setNumTopics] = useState(4);
+    const [useCurriculum, setUseCurriculum] = useState(false);
+
+    const [libraryMeta, setLibraryMeta] = useState<Library | null>(null);
+    const [outcomes, setOutcomes] = useState<CurriculumOutcome[]>([]);
+    const [outcomeLoading, setOutcomeLoading] = useState(false);
+    const [outcomeError, setOutcomeError] = useState<string | null>(null);
+    const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
+
+    useEffect(() => {
+        if (!libraryId) {
+            setLibraryMeta(null);
+            return;
+        }
+
+        const loadLibrary = async () => {
+            try {
+                const res = await api.get(`/libraries/${libraryId}`);
+                const data = await res.json();
+                if (res.ok) {
+                    setLibraryMeta(data.library as Library);
+                }
+            } catch (error) {
+                console.error('Failed to load library', error);
+            }
+        };
+
+        loadLibrary();
+    }, [libraryId]);
+
+    useEffect(() => {
+        if (!useCurriculum) {
+            setOutcomes([]);
+            setSelectedTopics([]);
+            setOutcomeError(null);
+            return;
+        }
+
+        if (!libraryMeta) return;
+
+        const loadOutcomes = async () => {
+            setOutcomeLoading(true);
+            setOutcomeError(null);
+            try {
+                const query = new URLSearchParams({
+                    subject: libraryMeta.subject,
+                    grade: String(libraryMeta.grade),
+                });
+                const res = await api.get(`/curriculum-outcomes?${query.toString()}`);
+                const data = await res.json();
+                if (res.ok) {
+                    const nextOutcomes = (data.outcomes || []) as CurriculumOutcome[];
+                    setOutcomes(nextOutcomes);
+                    const topics = Array.from(new Set(nextOutcomes.map((o) => o.topic))).sort();
+                    setSelectedTopics(topics.slice(0, 6));
+                } else {
+                    setOutcomeError(data.message || 'Không tải được outcomes');
+                }
+            } catch (error) {
+                console.error('Failed to load outcomes', error);
+                setOutcomeError('Không tải được outcomes');
+            } finally {
+                setOutcomeLoading(false);
+            }
+        };
+
+        loadOutcomes();
+    }, [useCurriculum, libraryMeta]);
+
+    const outcomeTopics = Array.from(new Set(outcomes.map((o) => o.topic))).sort();
+
+    const maxCurriculumTopics = 6;
+
+    const toggleTopicSelection = (topic: string) => {
+        setSelectedTopics((prev) => {
+            if (prev.includes(topic)) {
+                return prev.filter((t) => t !== topic);
+            }
+            if (prev.length >= maxCurriculumTopics) {
+                alert('Tối đa 6 chủ đề theo cấu trúc ma trận hiện tại');
+                return prev;
+            }
+            return [...prev, topic];
+        });
+    };
 
     async function handleGenerateMatrix() {
         if (!apiKey) {
             alert('Vui lòng nhập API key');
             return;
         }
+        if (useCurriculum && selectedTopics.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 chủ đề từ CTGDPT');
+            return;
+        }
         // Removed redundant localStorage write to preserve encryption
         setLoading(true);
         try {
+            const resolvedNumTopics = useCurriculum && selectedTopics.length > 0 ? selectedTopics.length : numTopics;
             const res = await api.post('/exams/generate-matrix', {
                 libraryId,
-                numTopics,
+                numTopics: resolvedNumTopics,
                 provider,
                 model,
                 apiKey,
+                useCurriculum,
+                scope: selectedTopics.length > 0 ? selectedTopics : undefined,
             });
             const data = await res.json();
             if (res.ok) {
@@ -234,6 +326,107 @@ export default function CreateExam() {
                                                     Thay đổi cấu hình
                                                 </button>
                                             </div>
+
+                                            <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-500/20 space-y-4">
+                                                <div className="flex items-start gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={useCurriculum}
+                                                        onChange={(e) => setUseCurriculum(e.target.checked)}
+                                                        disabled={!libraryMeta}
+                                                        className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                    />
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                            Bám CTGDPT 2018
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                            Tự động gợi ý chủ đề theo môn/lớp và bắt buộc map outcome cho từng đơn vị kiến thức.
+                                                        </p>
+                                                        {!libraryMeta && (
+                                                            <p className="text-xs text-red-500 mt-1">
+                                                                Cần chọn thư viện để lấy môn/lớp trước khi bật chế độ này.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {useCurriculum && (
+                                                    <div className="bg-white/60 dark:bg-black/20 rounded-xl border border-green-100 dark:border-green-500/20 p-4 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                                    Chủ đề theo CTGDPT
+                                                                </p>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                    {libraryMeta
+                                                                        ? `${libraryMeta.subject} lớp ${libraryMeta.grade}`
+                                                                        : 'Chưa xác định môn/lớp'}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                                {outcomeLoading ? 'Đang tải...' : `${outcomes.length} outcomes`}
+                                                            </div>
+                                                        </div>
+
+                                                        {outcomeError && (
+                                                            <p className="text-xs text-red-500">{outcomeError}</p>
+                                                        )}
+
+                                                        {!outcomeLoading && outcomeTopics.length === 0 && !outcomeError && (
+                                                            <p className="text-xs text-gray-500">
+                                                                Chưa có dữ liệu outcomes cho môn/lớp này.
+                                                            </p>
+                                                        )}
+
+                                                        {outcomeTopics.length > 0 && (
+                                                            <>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedTopics(outcomeTopics.slice(0, maxCurriculumTopics))}
+                                                                        className="text-xs font-medium text-green-700 dark:text-green-400 hover:underline"
+                                                                    >
+                                                                        Chọn tất cả
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedTopics([])}
+                                                                        className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:underline"
+                                                                    >
+                                                                        Bỏ chọn
+                                                                    </button>
+                                                                    <span className="text-xs text-gray-400">
+                                                                        Tối đa {maxCurriculumTopics} chủ đề
+                                                                    </span>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                                    {outcomeTopics.map((topic) => {
+                                                                        const checked = selectedTopics.includes(topic);
+                                                                        return (
+                                                                            <label
+                                                                                key={topic}
+                                                                                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${checked
+                                                                                    ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-500/10 dark:text-primary-300'
+                                                                                    : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300'
+                                                                                    }`}
+                                                                            >
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={checked}
+                                                                                    onChange={() => toggleTopicSelection(topic)}
+                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                                                />
+                                                                                <span className="line-clamp-2">{topic}</span>
+                                                                            </label>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -279,6 +472,11 @@ export default function CreateExam() {
                                     <div className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
                                         Chuẩn 7991
                                     </div>
+                                    {useCurriculum && (
+                                        <div className="px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-500/20">
+                                            Bám CTGDPT 2018
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -398,4 +596,3 @@ export default function CreateExam() {
         </div>
     );
 }
-

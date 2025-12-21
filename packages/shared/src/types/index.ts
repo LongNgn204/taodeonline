@@ -85,6 +85,17 @@ export interface Export {
     createdAt: string;
 }
 
+// ===== Curriculum Outcomes (CTGDPT 2018) =====
+export interface CurriculumOutcome {
+    id: string;
+    subject: string;
+    grade: number;
+    topic: string;
+    outcome: string; // Yêu cầu cần đạt
+    unit: string; // Đơn vị kiến thức
+    createdAt?: string;
+}
+
 // ===== AI Provider =====
 export type AIProvider =
     | 'openai'

@@ -27,6 +27,7 @@ export const UnitSchema = z.object({
     TF: LevelDistributionSchema.optional(), // Đúng/Sai
     SHORT: LevelDistributionSchema.optional(), // Trả lời ngắn
     ESSAY: LevelDistributionSchema.optional(), // Tự luận
+    outcomeIds: z.array(z.string()).optional(), // Map tới yêu cầu cần đạt (CTGDPT)
 });
 export type Unit = z.infer<typeof UnitSchema>;
 
@@ -89,6 +90,7 @@ export const MatrixConstraintsSchema = z.object({
     duration: z.number().int().default(60),
     scope: z.array(z.string()).optional(), // Phạm vi chương/bài
     numTopics: z.number().int().min(2).max(6).default(4),
+    useCurriculum: z.boolean().optional(), // Bám CTGDPT 2018
 });
 
 export type MatrixConstraints = z.infer<typeof MatrixConstraintsSchema>;

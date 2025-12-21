@@ -59,6 +59,7 @@ export const GenerateMatrixRequestSchema = z.object({
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10), // User's API key
+    useCurriculum: z.boolean().optional(), // Bám CTGDPT 2018
 });
 export type GenerateMatrixRequest = z.infer<typeof GenerateMatrixRequestSchema>;
 
