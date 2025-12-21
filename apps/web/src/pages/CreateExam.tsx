@@ -80,6 +80,11 @@ export default function CreateExam() {
 
 
     async function handleGenerateMatrix() {
+        if (!libraryId) {
+            alert('Vui lòng chọn thư viện trước khi tạo đề. Hãy quay lại và chọn một thư viện.');
+            navigate('/libraries');
+            return;
+        }
         if (!apiKey) {
             alert('Vui lòng nhập API key');
             return;
