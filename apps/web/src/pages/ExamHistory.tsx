@@ -14,7 +14,8 @@ const MOCK_EXAMS = [
         createdAt: '2024-05-20T08:30:00',
         questionCount: 25,
         status: 'ready', // ready, draft
-        type: 'Trắc nghiệm 100%'
+        type: 'Trắc nghiệm 100%',
+        teacherNote: 'Ưu tiên câu hỏi vận dụng thực tế, tránh câu mẹo.'
     },
     {
         id: 'EX-2024-002',
@@ -34,7 +35,8 @@ const MOCK_EXAMS = [
         createdAt: '2024-05-15T09:15:00',
         questionCount: 10,
         status: 'draft',
-        type: 'Trắc nghiệm 100%'
+        type: 'Trắc nghiệm 100%',
+        teacherNote: 'Tập trung phần phản ứng đặc trưng và ứng dụng thực tế.'
     },
     {
         id: 'EX-2024-004',
@@ -174,6 +176,12 @@ export default function ExamHistory() {
                         <h3 className="font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-primary-500 transition-colors">
                             {exam.title}
                         </h3>
+
+                        {exam.teacherNote && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
+                                Ghi chú: {exam.teacherNote}
+                            </p>
+                        )}
 
                         <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
                             <div className="flex items-center gap-1.5">

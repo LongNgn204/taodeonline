@@ -38,18 +38,25 @@ OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
 // User prompt template
 function buildUserPrompt(
     constraints: MatrixConstraints,
-    contextChunks: { titleHint: string; text: string }[]
+    contextChunks: { titleHint: string; text: string }[],
+    teacherNote?: string
 ): string {
     const chunksSummary = contextChunks
         .slice(0, 10)
         .map((c, i) => `[${i + 1}] ${c.titleHint}: ${c.text.slice(0, 200)}...`)
         .join('\n');
 
+    // Chú thích: Ghi chú của giáo viên được ưu tiên để định hướng ma trận.
+    const teacherNoteSection = teacherNote
+        ? `Ghi chú mong muốn của giáo viên: ${teacherNote}`
+        : '';
+
     return `Môn học: ${constraints.subject}
 Lớp: ${constraints.grade}
 Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
 ${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
+${teacherNoteSection}
 
 NỘI DUNG TÀI LIỆU (tham khảo để chọn chủ đề/đơn vị kiến thức):
 ${chunksSummary || 'Không có tài liệu upload. Hãy dùng kiến thức chung của môn học.'}
@@ -104,6 +111,7 @@ const OUTPUT_SCHEMA_HINT = `
 export interface MatrixAgentInput {
     constraints: MatrixConstraints;
     contextChunks: { titleHint: string; text: string }[];
+    teacherNote?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -120,7 +128,7 @@ export interface MatrixAgentOutput {
  * Sinh ma trận đề từ constraints và context
  */
 export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAgentOutput> {
-    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks);
+    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks, input.teacherNote);
 
     const request: ChatRequest = {
         provider: input.provider,

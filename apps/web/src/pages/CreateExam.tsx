@@ -45,6 +45,7 @@ export default function CreateExam() {
     const [model] = useState(aiConfig.modelId);
     const [apiKey] = useState(aiConfig.apiKey);
     const [numTopics, setNumTopics] = useState(4);
+    const [teacherNote, setTeacherNote] = useState('');
 
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
@@ -61,6 +62,7 @@ export default function CreateExam() {
             const res = await api.post('/exams/generate-matrix', {
                 libraryId,
                 numTopics,
+                teacherNote: teacherNote.trim() || undefined,
                 provider,
                 model,
                 apiKey,
@@ -86,6 +88,7 @@ export default function CreateExam() {
             const res = await api.post('/exams/generate-exam', {
                 libraryId,
                 matrixJson: JSON.stringify(matrix),
+                teacherNote: teacherNote.trim() || undefined,
                 provider,
                 model,
                 apiKey,
@@ -112,6 +115,7 @@ export default function CreateExam() {
                 title: `Đề kiểm tra ${matrix?.subject || ''} Lớp ${matrix?.grade || ''}`,
                 matrixJson: JSON.stringify(matrix),
                 examJson: exam ? JSON.stringify(exam) : undefined,
+                teacherNote: teacherNote.trim() || undefined,
                 status: 'draft',
             });
             await saveRes.json();
@@ -233,6 +237,22 @@ export default function CreateExam() {
                                                 >
                                                     Thay đổi cấu hình
                                                 </button>
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">
+                                                    Ghi chú mong muốn của thầy/cô
+                                                </label>
+                                                <textarea
+                                                    value={teacherNote}
+                                                    onChange={(e) => setTeacherNote(e.target.value)}
+                                                    placeholder="Ví dụ: ưu tiên câu hỏi vận dụng thực tế, tránh trùng lặp với đề lần trước..."
+                                                    rows={3}
+                                                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                                />
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    Ghi chú sẽ được dùng để định hướng ma trận và đề thi.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -398,4 +418,3 @@ export default function CreateExam() {
         </div>
     );
 }
-

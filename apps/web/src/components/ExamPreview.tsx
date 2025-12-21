@@ -51,6 +51,7 @@ interface ExamContent {
 
 interface ExamPreviewProps {
     exam: ExamContent;
+    teacherNote?: string;
     showAnswers?: boolean;
     showSources?: boolean;
     onRegenerateQuestion?: (questionId: string) => void;
@@ -58,6 +59,7 @@ interface ExamPreviewProps {
 
 export default function ExamPreview({
     exam,
+    teacherNote,
     showAnswers = false,
     showSources = false,
     onRegenerateQuestion,
@@ -95,6 +97,16 @@ export default function ExamPreview({
                     {exam.subject} - Lớp {exam.grade} | Thời gian: {exam.duration} phút | Tổng điểm:{' '}
                     {exam.totalScore}
                 </p>
+                {teacherNote && (
+                    <div className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 px-4 py-3 text-left">
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                            Ghi chú mong muốn của thầy/cô
+                        </p>
+                        <p className="text-sm text-amber-900 dark:text-amber-100 whitespace-pre-wrap">
+                            {teacherNote}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Controls */}

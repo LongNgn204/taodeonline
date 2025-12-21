@@ -56,6 +56,7 @@ export const GenerateMatrixRequestSchema = z.object({
     libraryId: z.string(),
     scope: z.array(z.string()).optional(), // Phạm vi chương/bài
     numTopics: z.number().int().min(2).max(15).default(4),
+    teacherNote: z.string().max(2000).optional(),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10), // User's API key
@@ -65,6 +66,7 @@ export type GenerateMatrixRequest = z.infer<typeof GenerateMatrixRequestSchema>;
 export const GenerateExamRequestSchema = z.object({
     libraryId: z.string(),
     matrixJson: z.string(), // JSON string của matrix
+    teacherNote: z.string().max(2000).optional(),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10),
@@ -88,6 +90,7 @@ export const SaveExamRequestSchema = z.object({
     examJson: z.string().optional(),
     answerKeyJson: z.string().optional(),
     status: z.enum(['draft', 'final']).default('draft'),
+    teacherNote: z.string().max(2000).optional(),
 });
 export type SaveExamRequest = z.infer<typeof SaveExamRequestSchema>;
 

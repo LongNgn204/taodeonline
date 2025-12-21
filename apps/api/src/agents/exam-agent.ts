@@ -52,11 +52,17 @@ OUTPUT: JSON theo schema ExamContent, KHÔNG có text giải thích.`;
 // Build user prompt từ matrix và chunks
 function buildExamPrompt(
     matrix: Matrix,
-    chunks: { id: string; titleHint: string; text: string }[]
+    chunks: { id: string; titleHint: string; text: string }[],
+    teacherNote?: string
 ): string {
     const chunksList = chunks
         .map((c) => `[${c.id}] ${c.titleHint}:\n${c.text}`)
         .join('\n\n---\n\n');
+
+    // Chú thích: Ưu tiên ghi chú để điều chỉnh cách ra đề (độ khó, dạng câu...).
+    const teacherNoteSection = teacherNote
+        ? `Ghi chú mong muốn của giáo viên: ${teacherNote}`
+        : '';
 
     const matrixSummary = matrix.topics
         .map(
@@ -85,6 +91,8 @@ Tổng: MCQ ${matrix.summary.MCQ.count} câu (${matrix.summary.MCQ.points}đ), T
 
 TÀI LIỆU NGUỒN (dùng để sinh câu hỏi):
 ${chunksList || 'Không có tài liệu. Dùng kiến thức chung phù hợp lớp ' + matrix.grade}
+
+${teacherNoteSection}
 
 Sinh đề thi với:
 - 4 sections: MCQ, TF, SHORT, ESSAY
@@ -161,6 +169,7 @@ const EXAM_SCHEMA_HINT = `
 export interface ExamAgentInput {
     matrix: Matrix;
     chunks: { id: string; titleHint: string; text: string }[];
+    teacherNote?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -177,7 +186,7 @@ export interface ExamAgentOutput {
  * Sinh đề thi từ ma trận và tài liệu
  */
 export async function generateExam(input: ExamAgentInput): Promise<ExamAgentOutput> {
-    const userPrompt = buildExamPrompt(input.matrix, input.chunks);
+    const userPrompt = buildExamPrompt(input.matrix, input.chunks, input.teacherNote);
 
     const request: ChatRequest = {
         provider: input.provider,

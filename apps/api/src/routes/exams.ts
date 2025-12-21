@@ -71,7 +71,7 @@ exams.post('/generate-matrix', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, scope, numTopics, provider, model, apiKey } = parsed.data;
+    const { libraryId, scope, numTopics, teacherNote, provider, model, apiKey } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -111,6 +111,7 @@ exams.post('/generate-matrix', async (c) => {
                 scope: scope || undefined,
             },
             contextChunks,
+            teacherNote,
             provider,
             model,
             apiKey,
@@ -163,7 +164,7 @@ exams.post('/generate-exam', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, matrixJson, provider, model, apiKey } = parsed.data;
+    const { libraryId, matrixJson, teacherNote, provider, model, apiKey } = parsed.data;
 
     // Parse matrix
     const matrix = safeJsonParse<Matrix | null>(matrixJson, null);
@@ -193,6 +194,7 @@ exams.post('/generate-exam', async (c) => {
         const result = await generateExam({
             matrix,
             chunks,
+            teacherNote,
             provider,
             model,
             apiKey,
@@ -293,7 +295,7 @@ exams.post('/', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, title, matrixJson, examJson, answerKeyJson, status } = parsed.data;
+    const { libraryId, title, matrixJson, examJson, answerKeyJson, status, teacherNote } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -310,10 +312,22 @@ exams.post('/', async (c) => {
     const now = isoNow();
 
     await c.env.DB.prepare(
-        `INSERT INTO exams (id, library_id, user_id, title, matrix_json, exam_json, answer_key_json, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO exams (id, library_id, user_id, title, matrix_json, exam_json, answer_key_json, status, teacher_note, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-        .bind(examId, libraryId, user.id, title, matrixJson, examJson || null, answerKeyJson || null, status, now, now)
+        .bind(
+            examId,
+            libraryId,
+            user.id,
+            title,
+            matrixJson,
+            examJson || null,
+            answerKeyJson || null,
+            status,
+            teacherNote || null,
+            now,
+            now
+        )
         .run();
 
     console.info('[exam] saved', { examId, title });
@@ -338,12 +352,13 @@ exams.put('/:id', async (c) => {
         return c.json({ error: 'not_found' }, 404);
     }
 
-    const { title, matrixJson, examJson, answerKeyJson, status } = body as {
+    const { title, matrixJson, examJson, answerKeyJson, status, teacherNote } = body as {
         title?: string;
         matrixJson?: string;
         examJson?: string;
         answerKeyJson?: string;
         status?: string;
+        teacherNote?: string;
     };
 
     // Build update query dynamically
@@ -369,6 +384,10 @@ exams.put('/:id', async (c) => {
     if (status) {
         updates.push('status = ?');
         params.push(status);
+    }
+    if (teacherNote !== undefined) {
+        updates.push('teacher_note = ?');
+        params.push(teacherNote);
     }
 
     params.push(examId);

@@ -15,6 +15,7 @@ interface Exam {
     status: string;
     created_at: string;
     updated_at: string;
+    teacher_note?: string;
 }
 
 export default function ExamDetail() {
@@ -164,6 +165,13 @@ export default function ExamDetail() {
                     </button>
                 </div>
             </div>
+
+            {exam.teacher_note && (
+                <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-200/80 dark:border-amber-500/20 rounded-2xl p-4 text-sm text-amber-900 dark:text-amber-100">
+                    <p className="font-semibold mb-1">Ghi chú mong muốn của thầy/cô</p>
+                    <p className="whitespace-pre-wrap">{exam.teacher_note}</p>
+                </div>
+            )}
 
             {/* Export buttons */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
