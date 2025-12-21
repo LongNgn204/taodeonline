@@ -398,4 +398,45 @@ exams.delete('/:id', async (c) => {
     return c.json({ success: true });
 });
 
+// POST /exams/log-generation - Log lịch sử tạo đề từ frontend
+// Chú thích: Endpoint này để tracking, không block UI nếu fail
+exams.post('/log-generation', async (c) => {
+    const user = c.get('user');
+    // Cho phép log cả khi chưa login (optional tracking)
+
+    const body = await c.req.json().catch(() => ({})) as {
+        libraryId?: string;
+        type?: 'matrix' | 'exam';
+        provider?: string;
+        model?: string;
+        resultJson?: string;
+    };
+
+    try {
+        const logId = generateId('log');
+        const now = isoNow();
+
+        await c.env.DB.prepare(
+            `INSERT INTO generation_logs (id, user_id, library_id, type, provider, model, result_json, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+            logId,
+            user?.id || 'anonymous',
+            body.libraryId || null,
+            body.type || 'unknown',
+            body.provider || null,
+            body.model || null,
+            body.resultJson?.slice(0, 50000) || null, // Limit size
+            now
+        ).run();
+
+        console.info('[exam] logged generation', { logId, type: body.type, model: body.model });
+        return c.json({ success: true, logId });
+    } catch (e) {
+        console.warn('[exam] log-generation failed:', e);
+        // Return success anyway - logging should not break the app
+        return c.json({ success: true, logged: false });
+    }
+});
+
 export { exams as examRoutes };

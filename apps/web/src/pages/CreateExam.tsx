@@ -1,5 +1,6 @@
 // Chú thích: Create Exam page - wizard tạo ma trận và đề thi - Revamped UI
 // Tích hợp Multi-Policy và Teacher Preferences
+// Gọi AI trực tiếp từ frontend, backend chỉ lưu lịch sử
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, Arrow
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { getAIConfig } from '../lib/ai-config';
+import { generateMatrixFrontend, generateExamFrontend } from '../lib/frontend-ai';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
@@ -79,6 +81,7 @@ export default function CreateExam() {
 
 
 
+    // Chú thích: Gọi AI trực tiếp từ frontend, không qua backend
     async function handleGenerateMatrix() {
         if (!libraryId) {
             alert('Vui lòng chọn thư viện trước khi tạo đề. Hãy quay lại và chọn một thư viện.');
@@ -86,53 +89,81 @@ export default function CreateExam() {
             return;
         }
         if (!apiKey) {
-            alert('Vui lòng nhập API key');
+            alert('Vui lòng cấu hình API Key trong Cài đặt trước khi tạo đề.');
+            navigate('/settings');
             return;
         }
-        // Removed redundant localStorage write to preserve encryption
+        if (!model) {
+            alert('Vui lòng chọn Model AI trong Cài đặt.');
+            navigate('/settings');
+            return;
+        }
+
         setLoading(true);
         try {
-            const res = await api.post('/exams/generate-matrix', {
-                libraryId,
+            // Lấy thông tin thư viện từ backend để biết môn/lớp
+            const libRes = await api.get(`/libraries/${libraryId}`);
+            const libData = await libRes.json();
+            if (!libRes.ok || !libData.library) {
+                throw new Error('Không tìm thấy thư viện');
+            }
+            const library = libData.library;
+
+            // Gọi AI trực tiếp từ frontend
+            const generatedMatrix = await generateMatrixFrontend({
+                subject: library.subject,
+                grade: library.grade,
+                duration: library.duration_minutes || 60,
                 numTopics,
+            });
+
+            setMatrix(generatedMatrix);
+            setStep('matrix');
+
+            // Lưu lịch sử tạo ma trận lên backend (async, không block UI)
+            api.post('/exams/log-generation', {
+                libraryId,
+                type: 'matrix',
                 provider,
                 model,
-                apiKey,
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setMatrix(data.matrix);
-                setStep('matrix');
-            } else {
-                alert(data.message || 'Lỗi khi tạo ma trận');
-            }
-        } catch (e) {
+                resultJson: JSON.stringify(generatedMatrix),
+            }).catch(e => console.warn('[log] Failed to log matrix generation:', e));
+
+        } catch (e: any) {
             console.error('Failed to generate matrix', e);
-            alert('Lỗi kết nối');
+            alert(e.message || 'Lỗi khi tạo ma trận. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
     }
 
+    // Chú thích: Gọi AI trực tiếp từ frontend để sinh đề
     async function handleGenerateExam() {
+        if (!matrix) {
+            alert('Vui lòng tạo ma trận trước.');
+            return;
+        }
+
         setLoading(true);
         try {
-            const res = await api.post('/exams/generate-exam', {
+            // Gọi AI trực tiếp từ frontend
+            const generatedExam = await generateExamFrontend(matrix);
+
+            setExam(generatedExam);
+            setStep('exam');
+
+            // Lưu lịch sử sinh đề lên backend (async)
+            api.post('/exams/log-generation', {
                 libraryId,
-                matrixJson: JSON.stringify(matrix),
+                type: 'exam',
                 provider,
                 model,
-                apiKey,
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setExam(data.exam);
-                setStep('exam');
-            } else {
-                alert(data.message || 'Lỗi khi tạo đề');
-            }
-        } catch (e) {
+                resultJson: JSON.stringify(generatedExam),
+            }).catch(e => console.warn('[log] Failed to log exam generation:', e));
+
+        } catch (e: any) {
             console.error('Failed to generate exam', e);
+            alert(e.message || 'Lỗi khi sinh đề. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }

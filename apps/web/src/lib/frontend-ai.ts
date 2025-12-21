@@ -1,0 +1,334 @@
+// Chú thích: Frontend AI utilities - gọi AI trực tiếp từ browser
+// Sử dụng API key của user, không qua backend
+
+import { getAIConfig, AI_ENDPOINTS } from './ai-config';
+
+// ===== PROMPTS =====
+
+// System prompt cho tạo ma trận
+export const MATRIX_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH (17/12/2024).
+
+NHIỆM VỤ: Tạo ma trận đề kiểm tra định kỳ cho môn học và lớp được yêu cầu.
+
+CẤU TRÚC ĐỀ THEO CV 7991 (BẮT BUỘC):
+1. Tổng điểm: 10 điểm
+2. Trắc nghiệm khách quan: 7 điểm
+   - Nhiều lựa chọn (MCQ): 3 điểm
+   - Đúng/Sai (TF): 2 điểm (mỗi câu 4 ý)
+   - Trả lời ngắn (SHORT): 2 điểm
+3. Tự luận (ESSAY): 3 điểm
+4. Tỷ lệ nhận thức: NB 40% / TH 30% / VD 30%
+5. Thời gian: 60 phút
+
+MỨC ĐỘ NHẬN THỨC:
+- NB (Nhận biết): Nhớ, nhận ra kiến thức đã học
+- TH (Thông hiểu): Giải thích, so sánh, phân tích đơn giản
+- VD (Vận dụng): Áp dụng vào tình huống mới, giải quyết vấn đề
+
+QUY TẮC:
+1. Phân bổ câu hỏi đều cho các chủ đề
+2. Mỗi chủ đề có từ 1-3 đơn vị kiến thức
+3. Tổng tỷ lệ % các chủ đề = 100%
+4. Số câu và điểm phải khớp với cấu trúc CV 7991
+
+OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
+
+// System prompt cho tạo đề từ ma trận
+export const EXAM_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên soạn đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH.
+
+NHIỆM VỤ: Dựa trên ma trận đề đã cho, sinh nội dung câu hỏi cụ thể cho từng mức độ và loại câu hỏi.
+
+YÊU CẦU:
+1. MCQ: 4 lựa chọn A/B/C/D, 1 đáp án đúng
+2. TF (Đúng/Sai): Mỗi câu có 4 mệnh đề, học sinh chọn Đ/S cho từng mệnh đề
+3. SHORT: Câu trả lời ngắn 1-2 từ/số
+4. ESSAY: Câu hỏi tự luận yêu cầu giải thích, phân tích
+
+PHONG CÁCH:
+- Ngôn ngữ chuẩn, rõ ràng
+- Phù hợp với trình độ học sinh
+- Có tính thực tiễn, liên hệ đời sống khi phù hợp
+- Đáp án chính xác và có giải thích ngắn gọn
+
+OUTPUT: JSON theo schema ExamContent, KHÔNG có text giải thích.`;
+
+// Schema hint cho matrix output
+export const MATRIX_SCHEMA_HINT = `
+{
+  "version": "matrix-v1.0.0",
+  "subject": "Môn học",
+  "grade": 10,
+  "duration": 60,
+  "totalScore": 10,
+  "topics": [
+    {
+      "id": "topic_1",
+      "name": "Tên chủ đề",
+      "units": [
+        {
+          "id": "unit_1",
+          "name": "Tên đơn vị kiến thức",
+          "MCQ": { "NB": 2, "TH": 1, "VD": 0 },
+          "TF": { "NB": 1, "TH": 0, "VD": 0 },
+          "SHORT": { "NB": 0, "TH": 1, "VD": 0 },
+          "ESSAY": { "NB": 0, "TH": 0, "VD": 1 }
+        }
+      ],
+      "percentScore": 25
+    }
+  ],
+  "summary": {
+    "MCQ": { "count": 12, "points": 3 },
+    "TF": { "count": 4, "points": 2 },
+    "SHORT": { "count": 4, "points": 2 },
+    "ESSAY": { "count": 2, "points": 3 },
+    "levelPercent": { "NB": 40, "TH": 30, "VD": 30 },
+    "totalByLevel": {
+      "NB": { "count": 8, "points": 4 },
+      "TH": { "count": 7, "points": 3 },
+      "VD": { "count": 7, "points": 3 }
+    }
+  }
+}`;
+
+// Schema hint cho exam output
+export const EXAM_SCHEMA_HINT = `
+{
+  "title": "Đề kiểm tra ...",
+  "subject": "Môn học",
+  "grade": 10,
+  "duration": 60,
+  "sections": [
+    {
+      "id": "section_1",
+      "title": "Phần I. Trắc nghiệm",
+      "type": "MCQ",
+      "questions": [
+        {
+          "id": "q1",
+          "content": "Nội dung câu hỏi",
+          "level": "NB",
+          "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+          "correctAnswer": "A",
+          "explanation": "Giải thích ngắn"
+        }
+      ]
+    },
+    {
+      "id": "section_2", 
+      "title": "Phần II. Đúng/Sai",
+      "type": "TF",
+      "questions": [
+        {
+          "id": "tf1",
+          "content": "Cho các mệnh đề sau:",
+          "level": "NB",
+          "statements": [
+            { "id": "a", "text": "Mệnh đề a", "isTrue": true },
+            { "id": "b", "text": "Mệnh đề b", "isTrue": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section_3",
+      "title": "Phần III. Trả lời ngắn", 
+      "type": "SHORT",
+      "questions": [
+        {
+          "id": "s1",
+          "content": "Câu hỏi trả lời ngắn",
+          "level": "TH",
+          "correctAnswer": "đáp án"
+        }
+      ]
+    },
+    {
+      "id": "section_4",
+      "title": "Phần IV. Tự luận",
+      "type": "ESSAY",
+      "questions": [
+        {
+          "id": "e1",
+          "content": "Câu hỏi tự luận",
+          "level": "VD",
+          "points": 1.5,
+          "rubric": "Hướng dẫn chấm"
+        }
+      ]
+    }
+  ]
+}`;
+
+// ===== AI CALL FUNCTIONS =====
+
+interface AICallOptions {
+    systemPrompt: string;
+    userPrompt: string;
+    jsonMode?: boolean;
+}
+
+/**
+ * Gọi AI trực tiếp từ frontend
+ * Chú thích: Sử dụng API key của user từ localStorage
+ */
+export async function callAI(options: AICallOptions): Promise<string> {
+    const { apiKey, providerId, modelId } = getAIConfig();
+
+    if (!apiKey) {
+        throw new Error('Vui lòng cấu hình API Key trong phần Cài đặt.');
+    }
+    if (!modelId) {
+        throw new Error('Vui lòng chọn Model trong phần Cài đặt.');
+    }
+
+    const messages = [
+        { role: 'system' as const, content: options.systemPrompt },
+        { role: 'user' as const, content: options.userPrompt }
+    ];
+
+    let url: string;
+    let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    // Chú thích: Xử lý từng provider khác nhau
+    if (providerId === 'openrouter') {
+        url = 'https://openrouter.ai/api/v1/chat/completions';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        headers['HTTP-Referer'] = window.location.origin;
+        headers['X-Title'] = 'Kiến Tạo Việt';
+    } else if (providerId === 'google') {
+        // Google Gemini có format khác
+        url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+        const googleBody = {
+            contents: [{ role: 'user', parts: [{ text: options.userPrompt }] }],
+            systemInstruction: { parts: [{ text: options.systemPrompt }] },
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 8192,
+                ...(options.jsonMode && { responseMimeType: 'application/json' })
+            }
+        };
+        const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(googleBody) });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Google API lỗi (${res.status}): ${errText.slice(0, 150)}`);
+        }
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+        // OpenAI-compatible providers
+        const baseUrl = AI_ENDPOINTS[providerId] || AI_ENDPOINTS.openai;
+        url = `${baseUrl}/chat/completions`;
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    // Standard OpenAI-compatible request
+    const body = {
+        model: modelId,
+        messages,
+        temperature: 0.7,
+        max_tokens: 8192,
+        ...(options.jsonMode && { response_format: { type: 'json_object' } }),
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[callAI] API error:', response.status, errorText);
+        throw new Error(`API lỗi (${response.status}): ${errorText.slice(0, 150)}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || '';
+}
+
+/**
+ * Gọi AI và parse JSON response
+ */
+export async function callAIJson<T>(options: AICallOptions): Promise<T> {
+    const content = await callAI({ ...options, jsonMode: true });
+
+    // Tìm JSON trong response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        console.error('[callAIJson] No JSON found:', content.slice(0, 500));
+        throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại.');
+    }
+
+    try {
+        return JSON.parse(jsonMatch[0]) as T;
+    } catch (e) {
+        console.error('[callAIJson] Parse error:', e, content.slice(0, 500));
+        throw new Error('Không thể parse JSON từ AI. Vui lòng thử lại.');
+    }
+}
+
+// ===== HIGH-LEVEL FUNCTIONS =====
+
+export interface MatrixConstraints {
+    subject: string;
+    grade: number;
+    duration?: number;
+    numTopics?: number;
+    scope?: string[];
+}
+
+/**
+ * Sinh ma trận đề từ frontend
+ */
+export async function generateMatrixFrontend(constraints: MatrixConstraints): Promise<any> {
+    const userPrompt = `Môn học: ${constraints.subject}
+Lớp: ${constraints.grade}
+Thời gian: ${constraints.duration || 60} phút
+Số chủ đề: ${constraints.numTopics || 4}
+${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
+
+Tạo ma trận đề với ${constraints.numTopics || 4} chủ đề, đảm bảo:
+- Tổng điểm = 10 (MCQ 3đ + TF 2đ + SHORT 2đ + ESSAY 3đ)
+- Tỷ lệ NB/TH/VD = 40/30/30
+- Các đơn vị kiến thức phù hợp với nội dung môn học lớp ${constraints.grade}
+
+Schema mẫu:
+${MATRIX_SCHEMA_HINT}
+
+Trả về JSON theo schema Matrix.`;
+
+    return await callAIJson({
+        systemPrompt: MATRIX_SYSTEM_PROMPT,
+        userPrompt,
+    });
+}
+
+/**
+ * Sinh đề thi từ ma trận
+ */
+export async function generateExamFrontend(matrix: any): Promise<any> {
+    const userPrompt = `Dựa trên ma trận đề sau, sinh nội dung câu hỏi cụ thể:
+
+MA TRẬN:
+${JSON.stringify(matrix, null, 2)}
+
+YÊU CẦU:
+- Tạo đủ số câu hỏi theo ma trận
+- MCQ: 4 lựa chọn, có đáp án và giải thích
+- TF: 4 mệnh đề Đ/S cho mỗi câu
+- SHORT: Đáp án ngắn gọn
+- ESSAY: Có rubric chấm điểm
+
+Schema mẫu:
+${EXAM_SCHEMA_HINT}
+
+Trả về JSON theo schema ExamContent.`;
+
+    return await callAIJson({
+        systemPrompt: EXAM_SYSTEM_PROMPT,
+        userPrompt,
+    });
+}
