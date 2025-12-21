@@ -52,10 +52,14 @@ export const AIProviderSchema = z.enum([
     'perplexity',
 ]);
 
+export const ExamModeSchema = z.enum(['SCHOOL_ASSESSMENT', 'GRADUATION_2025']);
+
 export const GenerateMatrixRequestSchema = z.object({
     libraryId: z.string(),
     scope: z.array(z.string()).optional(), // Phạm vi chương/bài
     numTopics: z.number().int().min(2).max(15).default(4),
+    policyPackId: z.string().optional(),
+    examMode: ExamModeSchema.default('SCHOOL_ASSESSMENT'),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10), // User's API key
@@ -65,6 +69,8 @@ export type GenerateMatrixRequest = z.infer<typeof GenerateMatrixRequestSchema>;
 export const GenerateExamRequestSchema = z.object({
     libraryId: z.string(),
     matrixJson: z.string(), // JSON string của matrix
+    policyPackId: z.string().optional(),
+    examMode: ExamModeSchema.default('SCHOOL_ASSESSMENT'),
     provider: AIProviderSchema,
     model: z.string(),
     apiKey: z.string().min(10),

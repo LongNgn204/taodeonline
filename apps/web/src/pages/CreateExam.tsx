@@ -11,6 +11,8 @@ import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
 
 type Step = 'config' | 'matrix' | 'exam' | 'export';
+type ExamMode = 'SCHOOL_ASSESSMENT' | 'GRADUATION_2025';
+type PolicyPack = { id: string; name: string; mode?: string };
 
 // const AI_PROVIDERS = [
 //     { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] },
@@ -45,6 +47,25 @@ export default function CreateExam() {
     const [model] = useState(aiConfig.modelId);
     const [apiKey] = useState(aiConfig.apiKey);
     const [numTopics, setNumTopics] = useState(4);
+    const [examMode, setExamMode] = useState<ExamMode>('SCHOOL_ASSESSMENT');
+    const [policyPacks, setPolicyPacks] = useState<PolicyPack[]>([]);
+    const [policyPackId, setPolicyPackId] = useState<string>('');
+
+    useEffect(() => {
+        async function fetchPolicyPacks() {
+            try {
+                const res = await api.get('/packs');
+                const data = await res.json();
+                if (res.ok) {
+                    setPolicyPacks(data.packs || []);
+                }
+            } catch (e) {
+                console.error('Failed to load policy packs', e);
+            }
+        }
+
+        fetchPolicyPacks();
+    }, []);
 
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
@@ -61,6 +82,8 @@ export default function CreateExam() {
             const res = await api.post('/exams/generate-matrix', {
                 libraryId,
                 numTopics,
+                examMode,
+                policyPackId: policyPackId || undefined,
                 provider,
                 model,
                 apiKey,
@@ -86,6 +109,8 @@ export default function CreateExam() {
             const res = await api.post('/exams/generate-exam', {
                 libraryId,
                 matrixJson: JSON.stringify(matrix),
+                examMode,
+                policyPackId: policyPackId || undefined,
                 provider,
                 model,
                 apiKey,
@@ -227,6 +252,21 @@ export default function CreateExam() {
                                                         ))}
                                                     </select>
                                                 </div>
+                                                <div className="flex-1">
+                                                    <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Chế độ</label>
+                                                    <select
+                                                        value={examMode}
+                                                        onChange={(e) => {
+                                                            const nextMode = e.target.value as ExamMode;
+                                                            setExamMode(nextMode);
+                                                            setPolicyPackId('');
+                                                        }}
+                                                        className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                                                    >
+                                                        <option value="SCHOOL_ASSESSMENT">KTĐG trong trường</option>
+                                                        <option value="GRADUATION_2025">TN THPT 2025</option>
+                                                    </select>
+                                                </div>
                                                 <button
                                                     onClick={() => navigate('/settings')}
                                                     className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline px-3 py-2"
@@ -265,6 +305,33 @@ export default function CreateExam() {
                                     </button>
                                 </div>
                             )}
+
+                            <div className="bg-white dark:bg-black/20 border border-gray-100 dark:border-white/10 rounded-2xl p-6 max-w-2xl mx-auto">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Gói công văn</label>
+                                        <select
+                                            value={policyPackId}
+                                            onChange={(e) => setPolicyPackId(e.target.value)}
+                                            className="w-full pl-3 pr-8 py-2 rounded-lg bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                                        >
+                                            <option value="">Mặc định hệ thống</option>
+                                            {policyPacks
+                                                .filter((pack) => !pack.mode || pack.mode.toUpperCase().includes(examMode === 'GRADUATION_2025' ? 'GRADUATION' : 'SCHOOL'))
+                                                .map((pack) => (
+                                                    <option key={pack.id} value={pack.id}>
+                                                        {pack.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                                        {policyPackId
+                                            ? 'Đã chọn gói công văn để áp policy/blueprint.'
+                                            : 'Chưa chọn gói, hệ thống dùng cấu hình mặc định.'}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -398,4 +465,3 @@ export default function CreateExam() {
         </div>
     );
 }
-
