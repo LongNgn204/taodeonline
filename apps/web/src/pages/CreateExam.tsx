@@ -37,6 +37,7 @@ export default function CreateExam() {
 
     const [step, setStep] = useState<Step>('config');
     const [loading, setLoading] = useState(false);
+    const [exportingLatex, setExportingLatex] = useState(false);
 
     // Config state
     // Read local storage initial values via helper
@@ -49,6 +50,7 @@ export default function CreateExam() {
     // Generated data
     const [matrix, setMatrix] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
+    const [savedExamId, setSavedExamId] = useState<string | null>(null);
 
     async function handleGenerateMatrix() {
         if (!apiKey) {
@@ -114,14 +116,39 @@ export default function CreateExam() {
                 examJson: exam ? JSON.stringify(exam) : undefined,
                 status: 'draft',
             });
-            await saveRes.json();
+            const data = await saveRes.json();
             if (saveRes.ok) {
+                setSavedExamId(data.examId || null);
                 setStep('export');
             }
         } catch (e) {
             console.error('Failed to save', e);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleExportLatex() {
+        if (!savedExamId) {
+            alert('Chưa có mã đề để xuất LaTeX');
+            return;
+        }
+
+        setExportingLatex(true);
+        try {
+            const res = await api.post(`/exports/${savedExamId}/exam-tex`);
+            const data = await res.json();
+
+            if (res.ok && data.downloadUrl) {
+                window.open(`/api${data.downloadUrl}`, '_blank');
+            } else {
+                alert(data.message || 'Export LaTeX thất bại');
+            }
+        } catch (e) {
+            console.error('Export LaTeX failed', e);
+            alert('Không thể xuất LaTeX, vui lòng thử lại.');
+        } finally {
+            setExportingLatex(false);
         }
     }
 
@@ -381,6 +408,20 @@ export default function CreateExam() {
                                     <Download className="w-5 h-5" />
                                     Tải về Word (Đề thi)
                                 </button>
+                                <button
+                                    onClick={handleExportLatex}
+                                    disabled={exportingLatex}
+                                    className="btn-secondary py-3 px-6 shadow-lg"
+                                >
+                                    {exportingLatex ? (
+                                        <div className="spinner" />
+                                    ) : (
+                                        <>
+                                            <Download className="w-5 h-5" />
+                                            Tải về LaTeX (.tex)
+                                        </>
+                                    )}
+                                </button>
                             </div>
 
                             <div className="pt-8">
@@ -398,4 +439,3 @@ export default function CreateExam() {
         </div>
     );
 }
-

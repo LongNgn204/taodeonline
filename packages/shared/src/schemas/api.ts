@@ -93,7 +93,7 @@ export type SaveExamRequest = z.infer<typeof SaveExamRequestSchema>;
 
 // ===== Export =====
 export const ExportRequestSchema = z.object({
-    format: z.enum(['matrix_xlsx', 'exam_docx', 'answer_docx']),
+    format: z.enum(['matrix_xlsx', 'exam_docx', 'answer_docx', 'exam_latex']),
 });
 export type ExportRequest = z.infer<typeof ExportRequestSchema>;
 
