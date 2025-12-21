@@ -3,8 +3,7 @@
 import { Hono } from 'hono';
 import { generateId, isoNow, safeJsonParse, validateExamForm } from '@exam-matrix/shared';
 import type { Matrix, ExamContent } from '@exam-matrix/shared';
-import { exportMatrixToExcel } from '@exam-matrix/export';
-import { exportExamToWord } from '@exam-matrix/export';
+import { exportMatrixToExcel, exportExamToLatex, exportExamToWord } from '@exam-matrix/export';
 import type { Env } from '../types.js';
 
 const exports = new Hono<{ Bindings: Env }>();
@@ -126,6 +125,52 @@ exports.post('/:examId/exam-docx', async (c) => {
     });
 });
 
+// POST /exports/:examId/exam-tex - Xuất đề thi sang LaTeX
+exports.post('/:examId/exam-tex', async (c) => {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'unauthorized' }, 401);
+
+    const examId = c.req.param('examId');
+
+    const exam = await c.env.DB.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?')
+        .bind(examId, user.id)
+        .first<{ id: string; exam_json: string; title: string }>();
+
+    if (!exam || !exam.exam_json) {
+        return c.json({ error: 'no_exam_content', message: 'Chưa có nội dung đề thi' }, 400);
+    }
+
+    const examContent = safeJsonParse<ExamContent | null>(exam.exam_json, null);
+    if (!examContent) {
+        return c.json({ error: 'invalid_exam', message: 'Nội dung đề thi không hợp lệ' }, 400);
+    }
+
+    const latexContent = exportExamToLatex(examContent);
+    const buffer = Buffer.from(latexContent, 'utf-8');
+
+    const r2Key = `exports/${user.id}/${examId}/exam_${Date.now()}.tex`;
+    await c.env.R2.put(r2Key, buffer, {
+        httpMetadata: {
+            contentType: 'text/x-tex; charset=utf-8',
+        },
+    });
+
+    const exportId = generateId('exp');
+    await c.env.DB.prepare(
+        'INSERT INTO exports (id, exam_id, user_id, type, r2_key, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+        .bind(exportId, examId, user.id, 'exam_latex', r2Key, isoNow())
+        .run();
+
+    console.info('[export] exam latex created', { examId, exportId });
+
+    return c.json({
+        success: true,
+        exportId,
+        downloadUrl: `/exports/${exportId}/download`,
+    });
+});
+
 // GET /exports/:exportId/download - Download file
 exports.get('/:exportId/download', async (c) => {
     const user = c.get('user');
@@ -157,6 +202,9 @@ exports.get('/:exportId/download', async (c) => {
     } else if (exp.type === 'exam_docx' || exp.type === 'answer_docx') {
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         filename = exp.type === 'exam_docx' ? 'de_thi.docx' : 'dap_an.docx';
+    } else if (exp.type === 'exam_latex') {
+        contentType = 'text/x-tex; charset=utf-8';
+        filename = 'de_thi.tex';
     }
 
     return new Response(object.body, {
