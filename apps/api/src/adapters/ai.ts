@@ -320,10 +320,14 @@ export async function chatJson<T>(
     // Parse JSON
     let parsed: T;
     try {
+        // Log response content để debug (không log đầy đủ để tránh spam)
+        console.info('[ai-adapter] response content preview:', response.content.slice(0, 500));
+
         // Tìm JSON trong response (có thể có text xung quanh)
         const jsonMatch = response.content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            throw new Error('No JSON found in response');
+            console.error('[ai-adapter] No JSON found. Full response:', response.content.slice(0, 1000));
+            throw new Error('No JSON found in response. AI may have returned plain text or an error message.');
         }
         parsed = JSON.parse(jsonMatch[0]);
 
@@ -333,6 +337,7 @@ export async function chatJson<T>(
         }
     } catch (e) {
         console.error('[ai-adapter] JSON parse error:', e);
+        console.error('[ai-adapter] Raw content was:', response.content.slice(0, 500));
         throw new Error(`Failed to parse JSON response: ${e}`);
     }
 

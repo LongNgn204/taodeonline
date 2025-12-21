@@ -9,32 +9,20 @@ export const getAIConfig = (): AIConfig => {
     const encodedKey = localStorage.getItem('ai_api_key') || '';
     let apiKey = encodedKey;
 
-    // Try to decode if looks like base64 (hacky check but works for simple obfuscation)
-    // Real keys usually don't have == at the end unless base64, but providers like Google/OpenAI use specific charsets.
-    // Safest way: try atob, if fail or result looks garbage, keep original?
-    // Since we CONTROL the saving in Settings.tsx, we know we use btoa.
-    // But for backward compatibility with existing keys in user browser:
-    try {
-        const decoded = atob(encodedKey);
-        // Basic heuristic: if decoded key looks clean (e.g. starts with sk-, AIza), use it.
-        // Or simply trust our Settings page always saves in base64.
-        // For robustness:
-        if (decoded && (decoded.startsWith('sk-') || decoded.startsWith('AIza') || decoded.startsWith('gsk_'))) {
-            apiKey = decoded;
-        } else {
-            // If decoding fails to produce a known prefix, maybe it wasnt encoded? 
-            // But valid key checked in Settings starts with known prefix.
-            // If original string starts with known prefix, use original.
-            if (encodedKey.startsWith('sk-') || encodedKey.startsWith('AIza') || encodedKey.startsWith('gsk_')) {
-                apiKey = encodedKey;
-            } else {
-                // Assume encoded
+    // Chú thích: Settings.tsx luôn lưu key đã encode bằng btoa()
+    // Đơn giản: thử decode, nếu fail thì dùng original (backward compat)
+    if (encodedKey) {
+        try {
+            const decoded = atob(encodedKey);
+            // Nếu decode thành công và có nội dung, dùng decoded
+            // (key thật không bao giờ là base64 hợp lệ của chính nó)
+            if (decoded && decoded.length > 0) {
                 apiKey = decoded;
             }
+        } catch (e) {
+            // Not base64, dùng original (key chưa encode từ phiên bản cũ)
+            apiKey = encodedKey;
         }
-    } catch (e) {
-        // Not base64
-        apiKey = encodedKey;
     }
 
     return {
