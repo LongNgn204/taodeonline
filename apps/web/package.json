@@ -11,7 +11,7 @@
         "lint": "eslint src --ext .ts,.tsx"
     },
     "dependencies": {
-        "@exam-matrix/shared": "*",
+        "@exam-matrix/shared": "workspace:*",
         "@heroicons/react": "^2.2.0",
         "buffer": "^5.7.1",
         "class-variance-authority": "^0.7.1",

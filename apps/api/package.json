@@ -12,9 +12,9 @@
         "clean": "rimraf dist .wrangler"
     },
     "dependencies": {
-        "@exam-matrix/export": "*",
-        "@exam-matrix/rag": "*",
-        "@exam-matrix/shared": "*",
+        "@exam-matrix/export": "workspace:*",
+        "@exam-matrix/rag": "workspace:*",
+        "@exam-matrix/shared": "workspace:*",
         "docx": "^8.5.0",
         "hono": "^4.6.0",
         "zod": "^3.22.4"
