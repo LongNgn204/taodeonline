@@ -3,4 +3,5 @@
 
 export * from './matrix.js';
 export * from './exam.js';
+export * from './form.js';
 export * from './api.js';
