@@ -1,7 +1,8 @@
 // Chú thích: ChatAssistant component - Floating AI helper
+// Gọi AI trực tiếp từ frontend, không qua backend
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, Sparkles, Loader2, Minimize2, Maximize2 } from 'lucide-react';
-import { getAIConfig } from '../lib/ai-config';
+import { getAIConfig, AI_ENDPOINTS } from '../lib/ai-config';
 
 interface Message {
     id: string;
@@ -9,6 +10,27 @@ interface Message {
     content: string;
     timestamp: number;
 }
+
+// System prompt cho trợ lý giáo dục Việt Nam
+const SYSTEM_PROMPT = `Bạn là "Trợ lý Kiến Tạo Việt", một chuyên gia giáo dục Việt Nam thân thiện và hữu ích.
+
+NHIỆM VỤ:
+- Hỗ trợ giáo viên tạo ma trận đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH
+- Giải đáp thắc mắc về quy định kiểm tra đánh giá
+- Tư vấn về cấu trúc đề thi, phân bổ điểm, mức độ nhận thức
+
+KIẾN THỨC CHÍNH:
+- CV 7991 (17/12/2024): Ma trận đề với 4 mức nhận thức (NB 40%, TH 30%, VD 30%)
+- Cấu trúc đề: MCQ 3đ + Đúng/Sai 2đ + Trả lời ngắn 2đ + Tự luận 3đ = 10đ
+- Thời gian: 45-60 phút cho bài kiểm tra định kỳ
+
+PHONG CÁCH:
+- Xưng hô: "tôi" và "thầy/cô"
+- Ngắn gọn, dễ hiểu, thực tế
+- Đưa ra ví dụ cụ thể khi cần
+- Nếu không chắc, thành thật nói không biết
+
+Trả lời bằng tiếng Việt, ngắn gọn (2-4 câu trừ khi cần giải thích chi tiết).`;
 
 export default function ChatAssistant() {
     const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +54,86 @@ export default function ChatAssistant() {
         }
     }, [messages, isOpen]);
 
+    // Chú thích: Gọi AI trực tiếp từ frontend, sử dụng API key của user
+    const callAI = async (userMessage: string): Promise<string> => {
+        const { apiKey, providerId, modelId } = getAIConfig();
+
+        if (!apiKey || !modelId) {
+            throw new Error('Vui lòng cấu hình API Key và chọn Model trong phần Cài đặt.');
+        }
+
+        // Build messages array cho API (bao gồm lịch sử chat)
+        const chatHistory = messages
+            .filter(m => m.id !== 'welcome') // Bỏ welcome message
+            .slice(-10) // Giữ 10 tin nhắn gần nhất để tránh quá dài
+            .map(m => ({
+                role: m.role as 'user' | 'assistant',
+                content: m.content
+            }));
+
+        const apiMessages = [
+            { role: 'system' as const, content: SYSTEM_PROMPT },
+            ...chatHistory,
+            { role: 'user' as const, content: userMessage }
+        ];
+
+        // Chú thích: Xác định endpoint và headers dựa trên provider
+        let url: string;
+        let headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+
+        if (providerId === 'openrouter') {
+            url = 'https://openrouter.ai/api/v1/chat/completions';
+            headers['Authorization'] = `Bearer ${apiKey}`;
+            headers['HTTP-Referer'] = window.location.origin;
+            headers['X-Title'] = 'Kiến Tạo Việt';
+        } else if (providerId === 'google') {
+            // Google Gemini có format khác, cần xử lý riêng
+            url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+            const googleBody = {
+                contents: apiMessages.filter(m => m.role !== 'system').map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                })),
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+            };
+            const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(googleBody) });
+            if (!res.ok) throw new Error(`Google API lỗi: ${res.status}`);
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có phản hồi.';
+        } else {
+            // OpenAI-compatible providers (openai, groq, deepseek, mistral, etc.)
+            const baseUrl = AI_ENDPOINTS[providerId] || AI_ENDPOINTS.openai;
+            url = `${baseUrl}/chat/completions`;
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        // Standard OpenAI-compatible request
+        const body = {
+            model: modelId,
+            messages: apiMessages,
+            temperature: 0.7,
+            max_tokens: 1024,
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[ChatAssistant] API error:', response.status, errorText);
+            throw new Error(`API lỗi (${response.status}): ${errorText.slice(0, 100)}`);
+        }
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || 'Không có phản hồi từ AI.';
+    };
+
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
@@ -47,26 +149,7 @@ export default function ChatAssistant() {
         setIsLoading(true);
 
         try {
-            // Check for API Key & Model
-            // Check for API Key & Model
-            const { apiKey, providerId: provider, modelId: model } = getAIConfig();
-
-            if (!apiKey) {
-                // throw new Error('Vui lòng nhập API Key trong phần Cài đặt để sử dụng trợ lý.');
-            }
-
-            // Simulated delay
-            await new Promise(r => setTimeout(r, 1500));
-
-            // Context-aware mock response for demo
-            let aiContent = `[${provider.toUpperCase()} / ${model}] `;
-            if (input.toLowerCase().includes("ma trận")) {
-                aiContent += "Theo công văn 7991, ma trận đề cần đảm bảo 4 mức độ nhận thức. Thầy/cô nên bắt đầu với tỉ lệ 40% Nhận biết và 30% Thông hiểu.";
-            } else if (input.toLowerCase().includes("lỗi") || input.toLowerCase().includes("không được")) {
-                aiContent += "Thầy/cô vui lòng kiểm tra lại kết nối hoặc reload trang. Nếu vẫn gặp lỗi, hãy thử kiểm tra lại API Key trong phần Cài đặt.";
-            } else {
-                aiContent += "Hệ thống đang sẵn sàng hỗ trợ. Thầy/cô cần tạo đề cho môn học nào?";
-            }
+            const aiContent = await callAI(input);
 
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
@@ -77,10 +160,11 @@ export default function ChatAssistant() {
             setMessages(prev => [...prev, aiMsg]);
 
         } catch (error: any) {
+            console.error('[ChatAssistant] Error:', error);
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `Lỗi: ${error.message || 'Không thể kết nối tới AI.'}`,
+                content: `⚠️ ${error.message || 'Không thể kết nối tới AI. Vui lòng kiểm tra API Key trong Cài đặt.'}`,
                 timestamp: Date.now()
             };
             setMessages(prev => [...prev, errorMsg]);
