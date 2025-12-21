@@ -202,6 +202,45 @@ const PROVIDER_CONFIGS: Record<
             tokensOut: data.usage?.completion_tokens || 0,
         }),
     },
+
+    // OpenRouter - Unified API for multiple models
+    openrouter: {
+        baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+        authHeader: (key) => ({
+            Authorization: `Bearer ${key}`,
+            'HTTP-Referer': 'https://kientaoviet.pages.dev',
+            'X-Title': 'Kiến Tạo Việt - Exam Matrix Generator',
+        }),
+        buildBody: (req) => ({
+            model: req.model,
+            messages: req.messages,
+            temperature: req.temperature ?? 0.7,
+            max_tokens: req.maxTokens ?? 4096,
+            ...(req.jsonMode && { response_format: { type: 'json_object' } }),
+        }),
+        parseResponse: (data: any) => ({
+            content: data.choices?.[0]?.message?.content || '',
+            tokensIn: data.usage?.prompt_tokens || 0,
+            tokensOut: data.usage?.completion_tokens || 0,
+        }),
+    },
+
+    // Perplexity - Search-focused AI
+    perplexity: {
+        baseUrl: 'https://api.perplexity.ai/chat/completions',
+        authHeader: (key) => ({ Authorization: `Bearer ${key}` }),
+        buildBody: (req) => ({
+            model: req.model,
+            messages: req.messages,
+            temperature: req.temperature ?? 0.7,
+            max_tokens: req.maxTokens ?? 4096,
+        }),
+        parseResponse: (data: any) => ({
+            content: data.choices?.[0]?.message?.content || '',
+            tokensIn: data.usage?.prompt_tokens || 0,
+            tokensOut: data.usage?.completion_tokens || 0,
+        }),
+    },
 };
 
 /**
