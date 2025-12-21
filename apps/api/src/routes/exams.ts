@@ -12,9 +12,14 @@ import {
 } from '@exam-matrix/shared';
 import type { Matrix, ExamContent } from '@exam-matrix/shared';
 import type { Env } from '../types.js';
-import { generateMatrix, validateMatrix } from '../agents/matrix-agent.js';
+import { generateMatrix } from '../agents/matrix-agent.js';
 import { generateExam } from '../agents/exam-agent.js';
 import { generateExamVersions } from '../services/ExamVersionGenerator.js';
+import {
+    buildPolicyContext,
+    validateExamAgainstPolicy,
+    validateMatrixAgainstPolicy,
+} from '../services/policy-engine.js';
 
 const exams = new Hono<{ Bindings: Env }>();
 
@@ -71,7 +76,7 @@ exams.post('/generate-matrix', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, scope, numTopics, provider, model, apiKey } = parsed.data;
+    const { libraryId, scope, numTopics, provider, model, apiKey, policyPackId, examMode } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -101,29 +106,37 @@ exams.post('/generate-matrix', async (c) => {
     }));
 
     try {
+        const policyContext = await buildPolicyContext({
+            db: c.env.DB,
+            packId: policyPackId,
+            examMode,
+            subject: library.subject,
+            grade: library.grade,
+            numTopics: numTopics || 4,
+            scope: scope || undefined,
+            fallbackDuration: library.duration_minutes,
+        });
+
         // Gọi MatrixAgent để sinh ma trận
         const result = await generateMatrix({
-            constraints: {
-                subject: library.subject,
-                grade: library.grade,
-                duration: library.duration_minutes,
-                numTopics: numTopics || 4,
-                scope: scope || undefined,
-            },
+            constraints: policyContext.matrixConstraints,
             contextChunks,
+            policyText: policyContext.matrixPolicyText,
             provider,
             model,
             apiKey,
         });
 
         // Validate ma trận
-        const validation = validateMatrix(result.matrix);
+        const validation = validateMatrixAgainstPolicy(result.matrix, policyContext.matrixPolicySummary);
         if (!validation.valid) {
             console.warn('[exam] matrix validation warnings:', validation.errors);
         }
 
         console.info('[exam] matrix generated', {
             libraryId,
+            examMode: policyContext.mode,
+            policyPackId: policyContext.packId || null,
             provider,
             model,
             topicsCount: result.matrix.topics.length,
@@ -163,7 +176,7 @@ exams.post('/generate-exam', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, matrixJson, provider, model, apiKey } = parsed.data;
+    const { libraryId, matrixJson, provider, model, apiKey, policyPackId, examMode } = parsed.data;
 
     // Parse matrix
     const matrix = safeJsonParse<Matrix | null>(matrixJson, null);
@@ -189,17 +202,40 @@ exams.post('/generate-exam', async (c) => {
     }));
 
     try {
+        const policyContext = await buildPolicyContext({
+            db: c.env.DB,
+            packId: policyPackId,
+            examMode,
+            subject: matrix.subject,
+            grade: matrix.grade,
+            numTopics: matrix.topics.length,
+            scope: undefined,
+            fallbackDuration: matrix.duration,
+        });
+
         // Gọi ExamAgent để sinh đề
         const result = await generateExam({
             matrix,
             chunks,
+            policyText: policyContext.examPolicyText,
             provider,
             model,
             apiKey,
         });
 
+        const examValidation = validateExamAgainstPolicy(
+            result.exam,
+            policyContext.matrixPolicySummary,
+            policyContext.blueprint
+        );
+        if (!examValidation.valid) {
+            console.warn('[exam] exam validation warnings:', examValidation.errors);
+        }
+
         console.info('[exam] exam generated', {
             libraryId,
+            examMode: policyContext.mode,
+            policyPackId: policyContext.packId || null,
             provider,
             model,
             sectionsCount: result.exam.sections.length,
@@ -215,6 +251,7 @@ exams.post('/generate-exam', async (c) => {
                 tokensOut: result.tokensOut,
                 latencyMs: result.latencyMs,
             },
+            validation: examValidation.valid ? null : examValidation.errors,
         });
     } catch (error) {
         console.error('[exam] exam generation failed:', error);

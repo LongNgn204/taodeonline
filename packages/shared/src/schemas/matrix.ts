@@ -1,5 +1,5 @@
-// Chú thích: Schema ma trận đề theo cấu trúc CV 7991/BGDĐT-GDTrH
-// Cấu trúc: 4 chủ đề, phân bổ theo mức độ nhận thức 40/30/30
+// Chú thích: Schema ma trận đề theo policy/blueprint
+// Cấu trúc có thể thay đổi theo chế độ (KTĐG/TN 2025)
 
 import { z } from 'zod';
 
@@ -51,24 +51,24 @@ export const MatrixSchema = z.object({
     subject: z.string(), // Môn học
     grade: z.number().int().min(1).max(12), // Lớp
     duration: z.number().int().positive(), // Thời gian (phút)
-    totalScore: z.literal(10), // Tổng điểm luôn là 10
+    totalScore: z.number().int().positive().default(10), // Tổng điểm (mặc định 10)
 
     topics: z.array(TopicSchema).min(1).max(6), // 3-4 chủ đề thường
 
     // Tổng hợp theo CV 7991
     summary: z.object({
         // Trắc nghiệm khách quan: 7 điểm
-        MCQ: z.object({ count: z.number(), points: z.literal(3) }), // 3đ
-        TF: z.object({ count: z.number(), points: z.literal(2) }), // 2đ
-        SHORT: z.object({ count: z.number(), points: z.literal(2) }), // 2đ
+        MCQ: z.object({ count: z.number(), points: z.number() }), // điểm có thể cấu hình
+        TF: z.object({ count: z.number(), points: z.number() }),
+        SHORT: z.object({ count: z.number(), points: z.number() }),
         // Tự luận: 3 điểm
-        ESSAY: z.object({ count: z.number(), points: z.literal(3) }), // 3đ
+        ESSAY: z.object({ count: z.number(), points: z.number() }),
 
         // Tỷ lệ mức độ nhận thức
         levelPercent: z.object({
-            NB: z.literal(40), // 40% nhận biết
-            TH: z.literal(30), // 30% thông hiểu
-            VD: z.literal(30), // 30% vận dụng
+            NB: z.number().int().min(0).max(100), // % nhận biết
+            TH: z.number().int().min(0).max(100), // % thông hiểu
+            VD: z.number().int().min(0).max(100), // % vận dụng
         }),
 
         // Tổng số câu và điểm chi tiết theo mức độ

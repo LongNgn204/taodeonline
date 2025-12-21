@@ -1,44 +1,36 @@
-// Chú thích: MatrixAgent - sinh ma trận đề theo CV 7991
+// Chú thích: MatrixAgent - sinh ma trận đề theo policy/blueprint
 // Sử dụng AI adapter với prompt template versioned
 
 import { chatJson, type ChatRequest } from '../adapters/ai.js';
 import { MatrixSchema, type Matrix, type MatrixConstraints } from '@exam-matrix/shared';
+import type { MatrixPolicySummary } from '../services/policy-engine.js';
 
 // Prompt version để tracking và rollback
 export const MATRIX_AGENT_VERSION = 'matrix-agent-v1.0.0';
 
 // System prompt cho MatrixAgent
-const MATRIX_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH (17/12/2024).
+const MATRIX_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo policy/blueprint.
 
-NHIỆM VỤ: Tạo ma trận đề kiểm tra định kỳ cho môn học và lớp được yêu cầu.
-
-CẤU TRÚC ĐỀ THEO CV 7991 (BẮT BUỘC):
-1. Tổng điểm: 10 điểm
-2. Trắc nghiệm khách quan: 7 điểm
-   - Nhiều lựa chọn (MCQ): 3 điểm
-   - Đúng/Sai (TF): 2 điểm (mỗi câu 4 ý)
-   - Trả lời ngắn (SHORT): 2 điểm
-3. Tự luận (ESSAY): 3 điểm
-4. Tỷ lệ nhận thức: NB 40% / TH 30% / VD 30%
-5. Thời gian: 60 phút
+NHIỆM VỤ: Tạo ma trận đề kiểm tra cho môn học và lớp được yêu cầu, tuân thủ quy tắc được cung cấp ở phần "QUY TẮC MA TRẬN".
 
 MỨC ĐỘ NHẬN THỨC:
 - NB (Nhận biết): Nhớ, nhận ra kiến thức đã học
 - TH (Thông hiểu): Giải thích, so sánh, phân tích đơn giản
 - VD (Vận dụng): Áp dụng vào tình huống mới, giải quyết vấn đề
 
-QUY TẮC:
+QUY TẮC CHUNG:
 1. Phân bổ câu hỏi đều cho các chủ đề
 2. Mỗi chủ đề có từ 1-3 đơn vị kiến thức
 3. Tổng tỷ lệ % các chủ đề = 100%
-4. Số câu và điểm phải khớp với cấu trúc CV 7991
+4. Số câu, điểm, thời gian phải khớp policy/blueprint
 
 OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
 
 // User prompt template
 function buildUserPrompt(
     constraints: MatrixConstraints,
-    contextChunks: { titleHint: string; text: string }[]
+    contextChunks: { titleHint: string; text: string }[],
+    policyText?: string
 ): string {
     const chunksSummary = contextChunks
         .slice(0, 10)
@@ -51,13 +43,15 @@ Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
 ${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
 
+QUY TẮC MA TRẬN (bắt buộc):
+${policyText || 'Theo cấu hình mặc định của hệ thống.'}
+
 NỘI DUNG TÀI LIỆU (tham khảo để chọn chủ đề/đơn vị kiến thức):
 ${chunksSummary || 'Không có tài liệu upload. Hãy dùng kiến thức chung của môn học.'}
 
 Tạo ma trận đề với ${constraints.numTopics || 4} chủ đề, đảm bảo:
-- Tổng điểm = 10 (MCQ 3đ + TF 2đ + SHORT 2đ + ESSAY 3đ)
-- Tỷ lệ NB/TH/VD = 40/30/30
 - Các đơn vị kiến thức phù hợp với nội dung môn học lớp ${constraints.grade}
+- Tuân thủ toàn bộ QUY TẮC MA TRẬN ở trên
 
 Trả về JSON theo schema Matrix.`;
 }
@@ -99,11 +93,13 @@ const OUTPUT_SCHEMA_HINT = `
       "VD": { "count": 7, "points": 3 }
     }
   }
-}`;
+}
+// Lưu ý: đây chỉ là ví dụ cấu trúc. Số câu/điểm phải bám policy/blueprint.`;
 
 export interface MatrixAgentInput {
     constraints: MatrixConstraints;
     contextChunks: { titleHint: string; text: string }[];
+    policyText?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -120,7 +116,7 @@ export interface MatrixAgentOutput {
  * Sinh ma trận đề từ constraints và context
  */
 export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAgentOutput> {
-    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks);
+    const userPrompt = buildUserPrompt(input.constraints, input.contextChunks, input.policyText);
 
     const request: ChatRequest = {
         provider: input.provider,
@@ -160,30 +156,36 @@ export async function generateMatrix(input: MatrixAgentInput): Promise<MatrixAge
 /**
  * Validate và tự động sửa ma trận nếu không khớp ràng buộc
  */
-export function validateMatrix(matrix: Matrix): { valid: boolean; errors: string[] } {
+export function validateMatrix(
+    matrix: Matrix,
+    policy?: MatrixPolicySummary
+): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
+    const rules = policy;
 
-    // Check tổng điểm
-    const totalPoints =
-        matrix.summary.MCQ.points +
-        matrix.summary.TF.points +
-        matrix.summary.SHORT.points +
-        matrix.summary.ESSAY.points;
+    if (rules) {
+        if (matrix.totalScore !== rules.totalScore) {
+            errors.push(`Tổng điểm = ${matrix.totalScore}, phải = ${rules.totalScore}`);
+        }
 
-    if (totalPoints !== 10) {
-        errors.push(`Tổng điểm = ${totalPoints}, phải = 10`);
+        if (matrix.duration !== rules.durationMinutes) {
+            errors.push(`Thời gian = ${matrix.duration} phút, phải = ${rules.durationMinutes} phút`);
+        }
+
+        if (matrix.summary.MCQ.points !== rules.summary.MCQ.points) errors.push('MCQ điểm không đúng policy');
+        if (matrix.summary.TF.points !== rules.summary.TF.points) errors.push('TF điểm không đúng policy');
+        if (matrix.summary.SHORT.points !== rules.summary.SHORT.points) errors.push('SHORT điểm không đúng policy');
+        if (matrix.summary.ESSAY.points !== rules.summary.ESSAY.points) errors.push('ESSAY điểm không đúng policy');
+
+        if (matrix.summary.MCQ.count !== rules.summary.MCQ.count) errors.push('MCQ số câu không đúng policy');
+        if (matrix.summary.TF.count !== rules.summary.TF.count) errors.push('TF số câu không đúng policy');
+        if (matrix.summary.SHORT.count !== rules.summary.SHORT.count) errors.push('SHORT số câu không đúng policy');
+        if (matrix.summary.ESSAY.count !== rules.summary.ESSAY.count) errors.push('ESSAY số câu không đúng policy');
+
+        if (matrix.summary.levelPercent.NB !== rules.levelPercent.NB) errors.push('NB % không đúng policy');
+        if (matrix.summary.levelPercent.TH !== rules.levelPercent.TH) errors.push('TH % không đúng policy');
+        if (matrix.summary.levelPercent.VD !== rules.levelPercent.VD) errors.push('VD % không đúng policy');
     }
-
-    // Check điểm từng loại
-    if (matrix.summary.MCQ.points !== 3) errors.push('MCQ phải = 3 điểm');
-    if (matrix.summary.TF.points !== 2) errors.push('TF phải = 2 điểm');
-    if (matrix.summary.SHORT.points !== 2) errors.push('SHORT phải = 2 điểm');
-    if (matrix.summary.ESSAY.points !== 3) errors.push('ESSAY phải = 3 điểm');
-
-    // Check tỷ lệ mức độ
-    if (matrix.summary.levelPercent.NB !== 40) errors.push('NB phải = 40%');
-    if (matrix.summary.levelPercent.TH !== 30) errors.push('TH phải = 30%');
-    if (matrix.summary.levelPercent.VD !== 30) errors.push('VD phải = 30%');
 
     // Check tổng % chủ đề
     const totalPercent = matrix.topics.reduce((sum: number, t: { percentScore: number }) => sum + t.percentScore, 0);

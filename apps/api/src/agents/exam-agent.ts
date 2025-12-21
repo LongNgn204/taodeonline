@@ -1,4 +1,4 @@
-// Chú thích: ExamAgent - sinh đề thi từ ma trận với citations
+// Chú thích: ExamAgent - sinh đề thi từ ma trận với citations (theo policy/blueprint)
 // Mỗi câu hỏi phải dựa trên tài liệu upload, kèm trích dẫn nguồn
 
 import { chat, chatJson, type ChatRequest } from '../adapters/ai.js';
@@ -13,7 +13,7 @@ import {
 export const EXAM_AGENT_VERSION = 'exam-agent-v1.0.0';
 
 // System prompt cho ExamAgent
-const EXAM_SYSTEM_PROMPT = `Bạn là giáo viên chuyên môn, nhiệm vụ sinh câu hỏi kiểm tra từ ma trận đề.
+const EXAM_SYSTEM_PROMPT = `Bạn là giáo viên chuyên môn, nhiệm vụ sinh câu hỏi kiểm tra từ ma trận đề theo policy/blueprint.
 
 QUY TẮC VỀ NỘI DUNG:
 1. Mỗi câu hỏi PHẢI dựa trên nội dung tài liệu được cung cấp
@@ -21,7 +21,7 @@ QUY TẮC VỀ NỘI DUNG:
 3. Không bịa đặt thông tin không có trong tài liệu
 4. Câu hỏi phải phù hợp mức độ nhận thức (NB/TH/VD)
 
-CẤU TRÚC CÂU HỎI THEO CV 7991:
+CẤU TRÚC CÂU HỎI (theo policy/blueprint):
 
 1. MCQ (Nhiều lựa chọn):
    - 4 lựa chọn A, B, C, D
@@ -52,7 +52,8 @@ OUTPUT: JSON theo schema ExamContent, KHÔNG có text giải thích.`;
 // Build user prompt từ matrix và chunks
 function buildExamPrompt(
     matrix: Matrix,
-    chunks: { id: string; titleHint: string; text: string }[]
+    chunks: { id: string; titleHint: string; text: string }[],
+    policyText?: string
 ): string {
     const chunksList = chunks
         .map((c) => `[${c.id}] ${c.titleHint}:\n${c.text}`)
@@ -77,6 +78,9 @@ function buildExamPrompt(
     return `MA TRẬN ĐỀ:
 Môn: ${matrix.subject} - Lớp ${matrix.grade}
 Thời gian: ${matrix.duration} phút
+
+QUY TẮC SINH ĐỀ (bắt buộc):
+${policyText || 'Theo cấu hình mặc định của hệ thống.'}
 
 Phân bổ câu hỏi:
 ${matrixSummary}
@@ -161,6 +165,7 @@ const EXAM_SCHEMA_HINT = `
 export interface ExamAgentInput {
     matrix: Matrix;
     chunks: { id: string; titleHint: string; text: string }[];
+    policyText?: string;
     provider: string;
     model: string;
     apiKey: string;
@@ -177,7 +182,7 @@ export interface ExamAgentOutput {
  * Sinh đề thi từ ma trận và tài liệu
  */
 export async function generateExam(input: ExamAgentInput): Promise<ExamAgentOutput> {
-    const userPrompt = buildExamPrompt(input.matrix, input.chunks);
+    const userPrompt = buildExamPrompt(input.matrix, input.chunks, input.policyText);
 
     const request: ChatRequest = {
         provider: input.provider,
