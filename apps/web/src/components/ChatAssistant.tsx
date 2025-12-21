@@ -87,7 +87,7 @@ export default function ChatAssistant() {
             url = 'https://openrouter.ai/api/v1/chat/completions';
             headers['Authorization'] = `Bearer ${apiKey}`;
             headers['HTTP-Referer'] = window.location.origin;
-            headers['X-Title'] = 'Kiến Tạo Việt';
+            headers['X-Title'] = 'Kien Tao Viet';
         } else if (providerId === 'google') {
             // Google Gemini có format khác, cần xử lý riêng
             url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;

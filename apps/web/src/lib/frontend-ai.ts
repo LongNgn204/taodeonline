@@ -163,9 +163,9 @@ export const EXAM_SCHEMA_HINT = `
 // ===== AI CALL FUNCTIONS =====
 
 interface AICallOptions {
-    systemPrompt: string;
-    userPrompt: string;
-    jsonMode?: boolean;
+  systemPrompt: string;
+  userPrompt: string;
+  jsonMode?: boolean;
 }
 
 /**
@@ -173,118 +173,118 @@ interface AICallOptions {
  * Chú thích: Sử dụng API key của user từ localStorage
  */
 export async function callAI(options: AICallOptions): Promise<string> {
-    const { apiKey, providerId, modelId } = getAIConfig();
+  const { apiKey, providerId, modelId } = getAIConfig();
 
-    if (!apiKey) {
-        throw new Error('Vui lòng cấu hình API Key trong phần Cài đặt.');
-    }
-    if (!modelId) {
-        throw new Error('Vui lòng chọn Model trong phần Cài đặt.');
-    }
+  if (!apiKey) {
+    throw new Error('Vui lòng cấu hình API Key trong phần Cài đặt.');
+  }
+  if (!modelId) {
+    throw new Error('Vui lòng chọn Model trong phần Cài đặt.');
+  }
 
-    const messages = [
-        { role: 'system' as const, content: options.systemPrompt },
-        { role: 'user' as const, content: options.userPrompt }
-    ];
+  const messages = [
+    { role: 'system' as const, content: options.systemPrompt },
+    { role: 'user' as const, content: options.userPrompt }
+  ];
 
-    let url: string;
-    let headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+  let url: string;
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
 
-    // Chú thích: Xử lý từng provider khác nhau
-    if (providerId === 'openrouter') {
-        url = 'https://openrouter.ai/api/v1/chat/completions';
-        headers['Authorization'] = `Bearer ${apiKey}`;
-        headers['HTTP-Referer'] = window.location.origin;
-        headers['X-Title'] = 'Kiến Tạo Việt';
-    } else if (providerId === 'google') {
-        // Google Gemini có format khác
-        url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-        const googleBody = {
-            contents: [{ role: 'user', parts: [{ text: options.userPrompt }] }],
-            systemInstruction: { parts: [{ text: options.systemPrompt }] },
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 8192,
-                ...(options.jsonMode && { responseMimeType: 'application/json' })
-            }
-        };
-        const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(googleBody) });
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`Google API lỗi (${res.status}): ${errText.slice(0, 150)}`);
-        }
-        const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-        // OpenAI-compatible providers
-        const baseUrl = AI_ENDPOINTS[providerId] || AI_ENDPOINTS.openai;
-        url = `${baseUrl}/chat/completions`;
-        headers['Authorization'] = `Bearer ${apiKey}`;
-    }
-
-    // Standard OpenAI-compatible request
-    const body = {
-        model: modelId,
-        messages,
+  // Chú thích: Xử lý từng provider khác nhau
+  if (providerId === 'openrouter') {
+    url = 'https://openrouter.ai/api/v1/chat/completions';
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'Kien Tao Viet';
+  } else if (providerId === 'google') {
+    // Google Gemini có format khác
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+    const googleBody = {
+      contents: [{ role: 'user', parts: [{ text: options.userPrompt }] }],
+      systemInstruction: { parts: [{ text: options.systemPrompt }] },
+      generationConfig: {
         temperature: 0.7,
-        max_tokens: 8192,
-        ...(options.jsonMode && { response_format: { type: 'json_object' } }),
+        maxOutputTokens: 8192,
+        ...(options.jsonMode && { responseMimeType: 'application/json' })
+      }
     };
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[callAI] API error:', response.status, errorText);
-        throw new Error(`API lỗi (${response.status}): ${errorText.slice(0, 150)}`);
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(googleBody) });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Google API lỗi (${res.status}): ${errText.slice(0, 150)}`);
     }
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else {
+    // OpenAI-compatible providers
+    const baseUrl = AI_ENDPOINTS[providerId] || AI_ENDPOINTS.openai;
+    url = `${baseUrl}/chat/completions`;
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+  // Standard OpenAI-compatible request
+  const body = {
+    model: modelId,
+    messages,
+    temperature: 0.7,
+    max_tokens: 8192,
+    ...(options.jsonMode && { response_format: { type: 'json_object' } }),
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[callAI] API error:', response.status, errorText);
+    throw new Error(`API lỗi (${response.status}): ${errorText.slice(0, 150)}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
 }
 
 /**
  * Gọi AI và parse JSON response
  */
 export async function callAIJson<T>(options: AICallOptions): Promise<T> {
-    const content = await callAI({ ...options, jsonMode: true });
+  const content = await callAI({ ...options, jsonMode: true });
 
-    // Tìm JSON trong response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-        console.error('[callAIJson] No JSON found:', content.slice(0, 500));
-        throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại.');
-    }
+  // Tìm JSON trong response
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('[callAIJson] No JSON found:', content.slice(0, 500));
+    throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại.');
+  }
 
-    try {
-        return JSON.parse(jsonMatch[0]) as T;
-    } catch (e) {
-        console.error('[callAIJson] Parse error:', e, content.slice(0, 500));
-        throw new Error('Không thể parse JSON từ AI. Vui lòng thử lại.');
-    }
+  try {
+    return JSON.parse(jsonMatch[0]) as T;
+  } catch (e) {
+    console.error('[callAIJson] Parse error:', e, content.slice(0, 500));
+    throw new Error('Không thể parse JSON từ AI. Vui lòng thử lại.');
+  }
 }
 
 // ===== HIGH-LEVEL FUNCTIONS =====
 
 export interface MatrixConstraints {
-    subject: string;
-    grade: number;
-    duration?: number;
-    numTopics?: number;
-    scope?: string[];
+  subject: string;
+  grade: number;
+  duration?: number;
+  numTopics?: number;
+  scope?: string[];
 }
 
 /**
  * Sinh ma trận đề từ frontend
  */
 export async function generateMatrixFrontend(constraints: MatrixConstraints): Promise<any> {
-    const userPrompt = `Môn học: ${constraints.subject}
+  const userPrompt = `Môn học: ${constraints.subject}
 Lớp: ${constraints.grade}
 Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
@@ -300,17 +300,17 @@ ${MATRIX_SCHEMA_HINT}
 
 Trả về JSON theo schema Matrix.`;
 
-    return await callAIJson({
-        systemPrompt: MATRIX_SYSTEM_PROMPT,
-        userPrompt,
-    });
+  return await callAIJson({
+    systemPrompt: MATRIX_SYSTEM_PROMPT,
+    userPrompt,
+  });
 }
 
 /**
  * Sinh đề thi từ ma trận
  */
 export async function generateExamFrontend(matrix: any): Promise<any> {
-    const userPrompt = `Dựa trên ma trận đề sau, sinh nội dung câu hỏi cụ thể:
+  const userPrompt = `Dựa trên ma trận đề sau, sinh nội dung câu hỏi cụ thể:
 
 MA TRẬN:
 ${JSON.stringify(matrix, null, 2)}
@@ -327,8 +327,8 @@ ${EXAM_SCHEMA_HINT}
 
 Trả về JSON theo schema ExamContent.`;
 
-    return await callAIJson({
-        systemPrompt: EXAM_SYSTEM_PROMPT,
-        userPrompt,
-    });
+  return await callAIJson({
+    systemPrompt: EXAM_SYSTEM_PROMPT,
+    userPrompt,
+  });
 }
