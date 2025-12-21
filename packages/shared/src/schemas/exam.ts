@@ -78,6 +78,7 @@ export const ExamContentSchema = z.object({
     subject: z.string(),
     grade: z.number().int(),
     duration: z.number().int(), // phút
+    formId: z.string().optional(), // Gắn form template để export đúng chuẩn
     sections: z.array(ExamSectionSchema),
     totalScore: z.literal(10),
     createdAt: z.string(),

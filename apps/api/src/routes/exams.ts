@@ -330,7 +330,7 @@ exams.post('/', async (c) => {
         return c.json({ error: 'validation_error', message: parsed.error.errors[0].message }, 400);
     }
 
-    const { libraryId, title, matrixJson, examJson, answerKeyJson, status } = parsed.data;
+    const { libraryId, title, matrixJson, examJson, answerKeyJson, status, formId } = parsed.data;
 
     // Verify library ownership
     const library = await c.env.DB.prepare(
@@ -345,12 +345,34 @@ exams.post('/', async (c) => {
 
     const examId = generateId('exam');
     const now = isoNow();
+    let storedExamJson = examJson || null;
+
+    if (examJson && formId) {
+        const examContent = safeJsonParse<ExamContent | null>(examJson, null);
+        if (!examContent) {
+            return c.json({ error: 'invalid_exam', message: 'Nội dung đề thi không hợp lệ' }, 400);
+        }
+        examContent.formId = formId;
+        storedExamJson = JSON.stringify(examContent);
+    }
 
     await c.env.DB.prepare(
-        `INSERT INTO exams (id, library_id, user_id, title, matrix_json, exam_json, answer_key_json, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO exams (id, library_id, user_id, title, matrix_json, exam_json, answer_key_json, form_id, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-        .bind(examId, libraryId, user.id, title, matrixJson, examJson || null, answerKeyJson || null, status, now, now)
+        .bind(
+            examId,
+            libraryId,
+            user.id,
+            title,
+            matrixJson,
+            storedExamJson,
+            answerKeyJson || null,
+            formId || null,
+            status,
+            now,
+            now
+        )
         .run();
 
     console.info('[exam] saved', { examId, title });
@@ -367,20 +389,21 @@ exams.put('/:id', async (c) => {
     const body = await c.req.json().catch(() => ({}));
 
     // Verify ownership
-    const existing = await c.env.DB.prepare('SELECT id FROM exams WHERE id = ? AND user_id = ?')
+    const existing = await c.env.DB.prepare('SELECT id, exam_json FROM exams WHERE id = ? AND user_id = ?')
         .bind(examId, user.id)
-        .first();
+        .first<{ id: string; exam_json: string | null }>();
 
     if (!existing) {
         return c.json({ error: 'not_found' }, 404);
     }
 
-    const { title, matrixJson, examJson, answerKeyJson, status } = body as {
+    const { title, matrixJson, examJson, answerKeyJson, status, formId } = body as {
         title?: string;
         matrixJson?: string;
         examJson?: string;
         answerKeyJson?: string;
         status?: string;
+        formId?: string;
     };
 
     // Build update query dynamically
@@ -395,9 +418,24 @@ exams.put('/:id', async (c) => {
         updates.push('matrix_json = ?');
         params.push(matrixJson);
     }
-    if (examJson !== undefined) {
+    let nextExamJson = examJson;
+    if (formId) {
+        const sourceExamJson = examJson ?? existing.exam_json;
+        if (sourceExamJson) {
+            const examContent = safeJsonParse<ExamContent | null>(sourceExamJson, null);
+            if (!examContent) {
+                return c.json({ error: 'invalid_exam', message: 'Nội dung đề thi không hợp lệ' }, 400);
+            }
+            examContent.formId = formId;
+            nextExamJson = JSON.stringify(examContent);
+        }
+        updates.push('form_id = ?');
+        params.push(formId);
+    }
+
+    if (nextExamJson !== undefined) {
         updates.push('exam_json = ?');
-        params.push(examJson);
+        params.push(nextExamJson ?? null);
     }
     if (answerKeyJson !== undefined) {
         updates.push('answer_key_json = ?');

@@ -1,6 +1,7 @@
 // Chú thích: Schemas cho API request/response validation
 
 import { z } from 'zod';
+import { ExamFormIdSchema } from './form.js';
 
 // ===== Auth =====
 export const RegisterRequestSchema = z.object({
@@ -93,6 +94,7 @@ export const SaveExamRequestSchema = z.object({
     matrixJson: z.string(),
     examJson: z.string().optional(),
     answerKeyJson: z.string().optional(),
+    formId: ExamFormIdSchema.optional(),
     status: z.enum(['draft', 'final']).default('draft'),
 });
 export type SaveExamRequest = z.infer<typeof SaveExamRequestSchema>;

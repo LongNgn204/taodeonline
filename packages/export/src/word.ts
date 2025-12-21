@@ -15,7 +15,13 @@ import {
     WidthType,
     SectionType,
 } from 'docx';
-import type { ExamContent, Question } from '@exam-matrix/shared';
+import {
+    type ExamContent,
+    type Question,
+    type FormTemplate,
+    getFormTemplate,
+    validateExamForm,
+} from '@exam-matrix/shared';
 
 // Map Unicode subscript về số thường
 const SUBSCRIPT_MAP: Record<string, string> = {
@@ -48,10 +54,28 @@ const SUPERSCRIPT_MAP: Record<string, string> = {
     '⁻': '-',
 };
 
+type TextStyle = {
+    bold?: boolean;
+    italics?: boolean;
+    underline?: boolean;
+    size?: number;
+    font?: string;
+};
+
+function buildRunStyle(template: FormTemplate, style?: TextStyle) {
+    return {
+        bold: style?.bold,
+        italics: style?.italics,
+        underline: style?.underline ? {} : undefined,
+        size: style?.size ?? template.typography.fontSize,
+        font: style?.font ?? template.typography.fontFamily,
+    };
+}
+
 /**
  * Parse text và tạo TextRun với subscript/superscript
  */
-function parseChemicalText(text: string): TextRun[] {
+function parseChemicalText(text: string, template: FormTemplate, style?: TextStyle): TextRun[] {
     const runs: TextRun[] = [];
     let currentText = '';
     let i = 0;
@@ -62,7 +86,7 @@ function parseChemicalText(text: string): TextRun[] {
         if (SUBSCRIPT_MAP[char]) {
             // Flush text hiện tại
             if (currentText) {
-                runs.push(new TextRun({ text: currentText }));
+                runs.push(new TextRun({ text: currentText, ...buildRunStyle(template, style) }));
                 currentText = '';
             }
             // Add subscript
@@ -70,17 +94,19 @@ function parseChemicalText(text: string): TextRun[] {
                 new TextRun({
                     text: SUBSCRIPT_MAP[char],
                     subScript: true,
+                    ...buildRunStyle(template, style),
                 })
             );
         } else if (SUPERSCRIPT_MAP[char]) {
             if (currentText) {
-                runs.push(new TextRun({ text: currentText }));
+                runs.push(new TextRun({ text: currentText, ...buildRunStyle(template, style) }));
                 currentText = '';
             }
             runs.push(
                 new TextRun({
                     text: SUPERSCRIPT_MAP[char],
                     superScript: true,
+                    ...buildRunStyle(template, style),
                 })
             );
         } else {
@@ -91,26 +117,32 @@ function parseChemicalText(text: string): TextRun[] {
 
     // Flush remaining text
     if (currentText) {
-        runs.push(new TextRun({ text: currentText }));
+        runs.push(new TextRun({ text: currentText, ...buildRunStyle(template, style) }));
     }
 
-    return runs.length > 0 ? runs : [new TextRun({ text })];
+    return runs.length > 0
+        ? runs
+        : [new TextRun({ text, ...buildRunStyle(template, style) })];
 }
 
 /**
  * Tạo paragraph cho câu hỏi MCQ
  */
-function createMCQParagraphs(q: Question, index: number): Paragraph[] {
+function createMCQParagraphs(
+    q: Question,
+    label: string,
+    template: FormTemplate
+): Paragraph[] {
     const paragraphs: Paragraph[] = [];
 
     // Câu hỏi
     paragraphs.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `Câu ${index}: `, bold: true }),
-                ...parseChemicalText(q.prompt),
+                new TextRun({ text: label, ...buildRunStyle(template, { bold: true }) }),
+                ...parseChemicalText(q.prompt, template),
             ],
-            spacing: { before: 200 },
+            spacing: { before: template.spacing.questionBefore, line: template.typography.lineSpacing },
         })
     );
 
@@ -120,10 +152,11 @@ function createMCQParagraphs(q: Question, index: number): Paragraph[] {
             paragraphs.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: `${opt.label}. ` }),
-                        ...parseChemicalText(opt.content),
+                        new TextRun({ text: `${opt.label}. `, ...buildRunStyle(template) }),
+                        ...parseChemicalText(opt.content, template),
                     ],
-                    indent: { left: 720 }, // 0.5 inch
+                    indent: { left: template.spacing.optionIndent },
+                    spacing: { line: template.typography.lineSpacing },
                 })
             );
         }
@@ -135,17 +168,21 @@ function createMCQParagraphs(q: Question, index: number): Paragraph[] {
 /**
  * Tạo paragraph cho câu hỏi True/False (4 ý)
  */
-function createTFParagraphs(q: Question, index: number): Paragraph[] {
+function createTFParagraphs(
+    q: Question,
+    label: string,
+    template: FormTemplate
+): Paragraph[] {
     const paragraphs: Paragraph[] = [];
 
     // Câu hỏi chính
     paragraphs.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `Câu ${index}: `, bold: true }),
-                ...parseChemicalText(q.prompt),
+                new TextRun({ text: label, ...buildRunStyle(template, { bold: true }) }),
+                ...parseChemicalText(q.prompt, template),
             ],
-            spacing: { before: 200 },
+            spacing: { before: template.spacing.questionBefore, line: template.typography.lineSpacing },
         })
     );
 
@@ -155,10 +192,11 @@ function createTFParagraphs(q: Question, index: number): Paragraph[] {
             paragraphs.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: `${item.id}) ` }),
-                        ...parseChemicalText(item.statement),
+                        new TextRun({ text: `${item.id}) `, ...buildRunStyle(template) }),
+                        ...parseChemicalText(item.statement, template),
                     ],
-                    indent: { left: 720 },
+                    indent: { left: template.spacing.optionIndent },
+                    spacing: { line: template.typography.lineSpacing },
                 })
             );
         }
@@ -170,18 +208,23 @@ function createTFParagraphs(q: Question, index: number): Paragraph[] {
 /**
  * Tạo paragraph cho câu hỏi Short Answer
  */
-function createShortParagraphs(q: Question, index: number): Paragraph[] {
+function createShortParagraphs(
+    q: Question,
+    label: string,
+    template: FormTemplate
+): Paragraph[] {
     return [
         new Paragraph({
             children: [
-                new TextRun({ text: `Câu ${index}: `, bold: true }),
-                ...parseChemicalText(q.prompt),
+                new TextRun({ text: label, ...buildRunStyle(template, { bold: true }) }),
+                ...parseChemicalText(q.prompt, template),
             ],
-            spacing: { before: 200 },
+            spacing: { before: template.spacing.questionBefore, line: template.typography.lineSpacing },
         }),
         new Paragraph({
-            children: [new TextRun({ text: 'Trả lời: ____________' })],
-            indent: { left: 720 },
+            children: [new TextRun({ text: 'Trả lời: ____________', ...buildRunStyle(template) })],
+            indent: { left: template.spacing.optionIndent },
+            spacing: { line: template.typography.lineSpacing },
         }),
     ];
 }
@@ -189,17 +232,64 @@ function createShortParagraphs(q: Question, index: number): Paragraph[] {
 /**
  * Tạo paragraph cho câu hỏi Essay
  */
-function createEssayParagraphs(q: Question, index: number): Paragraph[] {
+function createEssayParagraphs(
+    q: Question,
+    label: string,
+    template: FormTemplate
+): Paragraph[] {
     return [
         new Paragraph({
             children: [
-                new TextRun({ text: `Câu ${index}: `, bold: true }),
-                new TextRun({ text: `(${q.points} điểm) `, italics: true }),
-                ...parseChemicalText(q.prompt),
+                new TextRun({ text: label, ...buildRunStyle(template, { bold: true }) }),
+                new TextRun({
+                    text: `(${q.points} điểm) `,
+                    ...buildRunStyle(template, { italics: true }),
+                }),
+                ...parseChemicalText(q.prompt, template),
             ],
-            spacing: { before: 200 },
+            spacing: { before: template.spacing.questionBefore, line: template.typography.lineSpacing },
         }),
     ];
+}
+
+function applyHeaderTokens(text: string, exam: ExamContent): string {
+    return text
+        .replace(/\{examTitleUpper\}/g, exam.title.toUpperCase())
+        .replace(/\{examTitle\}/g, exam.title)
+        .replace(/\{subject\}/g, exam.subject)
+        .replace(/\{grade\}/g, String(exam.grade))
+        .replace(/\{duration\}/g, String(exam.duration));
+}
+
+function formatQuestionLabel(template: FormTemplate, index: number): string {
+    return template.numbering.questionLabelTemplate.replace(/\{n\}/g, String(index));
+}
+
+function orderSections(exam: ExamContent, template: FormTemplate) {
+    const remaining = [...exam.sections];
+    const ordered = template.sections.map((sectionTemplate) => {
+        const matchIndex = remaining.findIndex((s) => s.type === sectionTemplate.type);
+        if (matchIndex >= 0) {
+            const [section] = remaining.splice(matchIndex, 1);
+            return { section, template: sectionTemplate };
+        }
+        return {
+            section: {
+                type: sectionTemplate.type,
+                title: sectionTemplate.title,
+                instructions: sectionTemplate.instructions,
+                questions: [],
+                totalPoints: 0,
+            },
+            template: sectionTemplate,
+        };
+    });
+
+    for (const section of remaining) {
+        ordered.push({ section, template: { type: section.type, title: section.title } });
+    }
+
+    return ordered;
 }
 
 /**
@@ -210,6 +300,12 @@ function createEssayParagraphs(q: Question, index: number): Paragraph[] {
  * Export đề thi sang Word document (Chuẩn form thi)
  */
 export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
+    const template = getFormTemplate(exam.formId);
+    const validation = validateExamForm(exam, template);
+    if (!validation.valid) {
+        console.warn('[export] form validation warnings:', validation.issues);
+    }
+
     // 1. Header Section (1 Column)
     // Table 2 columns: Left = Department/School, Right = Exam Info
     const headerTable = new Table({
@@ -228,41 +324,52 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
                     new TableCell({
                         width: { size: 40, type: WidthType.PERCENTAGE },
                         children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: 'SỞ GD&ĐT ....................', bold: true })],
+                            ...template.header.leftLines.map((line) => new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: applyHeaderTokens(line.text, exam),
+                                        ...buildRunStyle(template, {
+                                            bold: line.bold,
+                                            italics: line.italics,
+                                            underline: line.underline,
+                                            size: line.size ?? template.typography.headerFontSize,
+                                        }),
+                                    }),
+                                ],
                                 alignment: AlignmentType.CENTER,
-                            }),
-                            new Paragraph({
-                                children: [new TextRun({ text: 'TRƯỜNG THPT ....................', bold: true })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                            new Paragraph({
-                                children: [new TextRun({ text: '__________________', bold: true })], // Separator line
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 200 }
-                            }),
+                            })),
+                            ...(template.header.showSeparatorLine
+                                ? [
+                                    new Paragraph({
+                                        children: [
+                                            new TextRun({
+                                                text: '__________________',
+                                                ...buildRunStyle(template, { bold: true }),
+                                            }),
+                                        ],
+                                        alignment: AlignmentType.CENTER,
+                                        spacing: { after: 200 },
+                                    }),
+                                ]
+                                : []),
                         ],
                     }),
                     new TableCell({
                         width: { size: 60, type: WidthType.PERCENTAGE },
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: exam.title.toUpperCase(), bold: true })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                            new Paragraph({
-                                children: [new TextRun({ text: `Môn: ${exam.subject} - Lớp ${exam.grade}`, bold: true })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                            new Paragraph({
-                                children: [new TextRun({ text: `Thời gian làm bài: ${exam.duration} phút`, italics: true })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                            new Paragraph({
-                                children: [new TextRun({ text: '(Không kể thời gian phát đề)', italics: true, size: 20 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
+                        children: template.header.rightLines.map((line) => new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: applyHeaderTokens(line.text, exam),
+                                    ...buildRunStyle(template, {
+                                        bold: line.bold,
+                                        italics: line.italics,
+                                        underline: line.underline,
+                                        size: line.size ?? template.typography.headerFontSize,
+                                    }),
+                                }),
+                            ],
+                            alignment: AlignmentType.CENTER,
+                        })),
                     }),
                 ],
             }),
@@ -272,32 +379,51 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
     // Student Info area
     const studentInfo = new Paragraph({
         children: [
-            new TextRun({ text: 'Họ và tên thí sinh: .............................................................. ' }),
-            new TextRun({ text: 'Số báo danh: .....................', bold: true }),
+            new TextRun({
+                text: 'Họ và tên thí sinh: .............................................................. ',
+                ...buildRunStyle(template),
+            }),
+            new TextRun({ text: 'Số báo danh: .....................', ...buildRunStyle(template, { bold: true }) }),
         ],
-        spacing: { before: 200, after: 400 },
+        spacing: { before: 200, after: template.spacing.headerAfter, line: template.typography.lineSpacing },
     });
 
-    const headerChildren = [headerTable, studentInfo];
+    const headerChildren = template.header.showStudentInfo ? [headerTable, studentInfo] : [headerTable];
 
     // 2. Questions Section (2 Columns)
     const questionChildren: Paragraph[] = [];
-    let questionIndex = 1;
+    let questionIndex = template.numbering.startAt;
+    const orderedSections = orderSections(exam, template);
 
-    for (const section of exam.sections) {
+    for (const { section, template: sectionTemplate } of orderedSections) {
         // Section Header
         questionChildren.push(
             new Paragraph({
-                children: [new TextRun({ text: section.title, bold: true, underline: {} })],
-                spacing: { before: 200, after: 200 },
+                children: [
+                    new TextRun({
+                        text: sectionTemplate.title,
+                        ...buildRunStyle(template, { bold: true, underline: true }),
+                    }),
+                ],
+                spacing: {
+                    before: template.spacing.sectionTitleBefore,
+                    after: template.spacing.sectionTitleAfter,
+                    line: template.typography.lineSpacing,
+                },
             })
         );
 
-        if (section.instructions) {
+        const instructions = section.instructions || sectionTemplate.instructions;
+        if (instructions) {
             questionChildren.push(
                 new Paragraph({
-                    children: [new TextRun({ text: section.instructions, italics: true })],
-                    spacing: { after: 200 },
+                    children: [
+                        new TextRun({
+                            text: instructions,
+                            ...buildRunStyle(template, { italics: true }),
+                        }),
+                    ],
+                    spacing: { after: template.spacing.sectionTitleAfter, line: template.typography.lineSpacing },
                 })
             );
         }
@@ -305,24 +431,34 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
         // Questions
         for (const q of section.questions) {
             let questionParagraphs: Paragraph[] = [];
+            const label = formatQuestionLabel(template, questionIndex);
 
             switch (q.type) {
                 case 'MCQ':
-                    questionParagraphs = createMCQParagraphs(q, questionIndex);
+                    questionParagraphs = createMCQParagraphs(q, label, template);
                     break;
                 case 'TF':
-                    questionParagraphs = createTFParagraphs(q, questionIndex);
+                    questionParagraphs = createTFParagraphs(q, label, template);
                     break;
                 case 'SHORT':
-                    questionParagraphs = createShortParagraphs(q, questionIndex);
+                    questionParagraphs = createShortParagraphs(q, label, template);
                     break;
                 case 'ESSAY':
-                    questionParagraphs = createEssayParagraphs(q, questionIndex);
+                    questionParagraphs = createEssayParagraphs(q, label, template);
                     break;
             }
 
             questionChildren.push(...questionParagraphs);
-            questionIndex++;
+
+            if (template.numbering.mode === 'global') {
+                questionIndex++;
+            } else if (template.numbering.mode === 'per_section') {
+                questionIndex++;
+            }
+        }
+
+        if (template.numbering.mode === 'per_section') {
+            questionIndex = template.numbering.startAt;
         }
     }
 
@@ -331,7 +467,7 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
         new Paragraph({
             text: '----------- HẾT -----------',
             alignment: AlignmentType.CENTER,
-            spacing: { before: 400 },
+            spacing: { before: template.spacing.footerBefore },
         })
     );
 
@@ -348,8 +484,8 @@ export async function exportExamToWord(exam: ExamContent): Promise<Buffer> {
                 properties: {
                     type: SectionType.CONTINUOUS,
                     column: {
-                        count: 2,
-                        space: 720, // 0.5 inch spacing
+                        count: template.layout.columns,
+                        space: template.spacing.columnGap,
                         separate: true, // vertical line between columns? optional
                     },
                 },
@@ -372,6 +508,7 @@ export async function exportAnswerKeyToWord(
     answerKey: { questionId: string; answer: string; rubric?: string }[]
 ): Promise<Buffer> {
     const sections: Paragraph[] = [];
+    const template = getFormTemplate(exam.formId);
 
     sections.push(
         new Paragraph({
@@ -385,7 +522,10 @@ export async function exportAnswerKeyToWord(
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `${exam.subject} - Lớp ${exam.grade}`, bold: true }),
+                new TextRun({
+                    text: `${exam.subject} - Lớp ${exam.grade}`,
+                    ...buildRunStyle(template, { bold: true }),
+                }),
             ],
             alignment: AlignmentType.CENTER,
             spacing: { after: 400 },
@@ -393,12 +533,12 @@ export async function exportAnswerKeyToWord(
     );
 
     // Answer table
-    let questionIndex = 1;
+    let questionIndex = template.numbering.startAt;
 
-    for (const section of exam.sections) {
+    for (const { section, template: sectionTemplate } of orderSections(exam, template)) {
         sections.push(
             new Paragraph({
-                text: section.title,
+                text: sectionTemplate.title,
                 heading: HeadingLevel.HEADING_2,
                 spacing: { before: 300 },
             })
@@ -406,13 +546,17 @@ export async function exportAnswerKeyToWord(
 
         for (const q of section.questions) {
             const answer = answerKey.find((a) => a.questionId === q.id);
+            const label = formatQuestionLabel(template, questionIndex);
 
             sections.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: `Câu ${questionIndex}: `, bold: true }),
-                        new TextRun({ text: answer?.answer || q.answerKey }),
-                        new TextRun({ text: ` (${q.points} điểm)`, italics: true }),
+                        new TextRun({ text: label, ...buildRunStyle(template, { bold: true }) }),
+                        new TextRun({ text: answer?.answer || q.answerKey, ...buildRunStyle(template) }),
+                        new TextRun({
+                            text: ` (${q.points} điểm)`,
+                            ...buildRunStyle(template, { italics: true }),
+                        }),
                     ],
                     spacing: { before: 100 },
                 })
@@ -423,8 +567,14 @@ export async function exportAnswerKeyToWord(
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: 'Hướng dẫn chấm: ', italics: true }),
-                            new TextRun({ text: answer?.rubric || q.solution || '' }),
+                            new TextRun({
+                                text: 'Hướng dẫn chấm: ',
+                                ...buildRunStyle(template, { italics: true }),
+                            }),
+                            new TextRun({
+                                text: answer?.rubric || q.solution || '',
+                                ...buildRunStyle(template),
+                            }),
                         ],
                         indent: { left: 720 },
                     })
@@ -432,6 +582,10 @@ export async function exportAnswerKeyToWord(
             }
 
             questionIndex++;
+        }
+
+        if (template.numbering.mode === 'per_section') {
+            questionIndex = template.numbering.startAt;
         }
     }
 

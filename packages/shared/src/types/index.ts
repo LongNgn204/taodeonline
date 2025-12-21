@@ -57,6 +57,79 @@ export type CognitiveLevel = 'NB' | 'TH' | 'VD'; // Nhận biết, Thông hiểu
 // ===== Loại câu hỏi =====
 export type QuestionType = 'MCQ' | 'TF' | 'SHORT' | 'ESSAY';
 
+// ===== Exam Form Template =====
+export type ExamFormId = 'standard_v1';
+
+export interface FormHeaderLine {
+    text: string;
+    bold?: boolean;
+    italics?: boolean;
+    underline?: boolean;
+    size?: number; // Đơn vị half-point (docx)
+}
+
+export interface FormHeaderLayout {
+    leftLines: FormHeaderLine[];
+    rightLines: FormHeaderLine[];
+    showSeparatorLine?: boolean;
+    showStudentInfo?: boolean;
+}
+
+export interface FormSectionTemplate {
+    type: QuestionType;
+    title: string;
+    instructions?: string;
+}
+
+export interface FormNumberingRule {
+    mode: 'global' | 'per_section';
+    startAt: number;
+    questionLabelTemplate: string; // Ví dụ: "Câu {n}: "
+}
+
+export interface FormTypography {
+    fontFamily: string;
+    fontSize: number;
+    headerFontSize: number;
+    lineSpacing: number;
+}
+
+export interface FormSpacing {
+    headerAfter: number;
+    sectionTitleBefore: number;
+    sectionTitleAfter: number;
+    questionBefore: number;
+    optionIndent: number;
+    columnGap: number;
+    footerBefore: number;
+}
+
+export interface FormLayout {
+    columns: number;
+}
+
+export interface FormTemplate {
+    formId: ExamFormId;
+    header: FormHeaderLayout;
+    sections: FormSectionTemplate[];
+    numbering: FormNumberingRule;
+    typography: FormTypography;
+    spacing: FormSpacing;
+    layout: FormLayout;
+}
+
+export type ExamForm = FormTemplate;
+
+export interface FormValidationIssue {
+    code: string;
+    message: string;
+}
+
+export interface FormValidationResult {
+    valid: boolean;
+    issues: FormValidationIssue[];
+}
+
 // ===== Exam =====
 export type ExamStatus = 'draft' | 'final';
 
@@ -68,6 +141,7 @@ export interface Exam {
     matrixJson: string; // JSON string của Matrix
     examJson?: string; // JSON string của ExamContent
     answerKeyJson?: string;
+    formId?: ExamFormId;
     status: ExamStatus;
     createdAt: string;
     updatedAt: string;

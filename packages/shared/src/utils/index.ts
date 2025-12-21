@@ -1,4 +1,5 @@
 // Chú thích: Utility functions dùng chung
+export * from './examForm.js';
 
 // Generate ID ngắn gọn (dùng nanoid pattern)
 export function generateId(prefix?: string): string {
