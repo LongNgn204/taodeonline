@@ -101,6 +101,15 @@ app.route('/community', communityRoutes);
 import { policyRoutes } from './routes/policies.js';
 app.route('/policies', policyRoutes); // Public - no auth required
 
+// Policy Context routes (data-driven prompts - Phase 1)
+import { policyContextRoutes } from './routes/policy-context.js';
+app.route('/policy-context', policyContextRoutes); // Public - no auth required
+
+// RAG Context routes (Phase 2 - AI đọc thư viện user)
+import { ragContextRoutes } from './routes/rag-context.js';
+app.use('/rag/*', authMiddleware);
+app.route('/rag', ragContextRoutes);
+
 // Teacher Preferences routes
 import { preferencesRoutes } from './routes/preferences.js';
 app.use('/preferences/*', authMiddleware);

@@ -1,24 +1,142 @@
 // Chú thích: Frontend AI utilities - gọi AI trực tiếp từ browser
 // Sử dụng API key của user, không qua backend
+// BYOK strict: key không gửi lên server
 
 import { getAIConfig, AI_ENDPOINTS } from './ai-config';
 
-// ===== PROMPTS =====
+// ===== POLICY CONTEXT (DATA-DRIVEN) =====
 
-// System prompt cho tạo ma trận
-export const MATRIX_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH (17/12/2024).
+/**
+ * PolicyContext từ backend - chứa policyText để inject vào prompt
+ * Chú thích: Thay vì hardcode CV7991, ta lấy policy context từ API
+ */
+export interface PolicyContext {
+  policyText: string;
+  constraints: Record<string, unknown>;
+  questionTypes: Record<string, unknown>;
+  schemaHints: unknown;
+  policyRefs: string[];
+  policyVersion: string;
+}
+
+/**
+ * Fetch policy context từ backend
+ * Chú thích: API trả về policyText đã resolve từ policy registry
+ */
+export async function fetchPolicyContext(
+  taskType: 'matrix' | 'exam' | 'lessonplan',
+  params: { grade: number; subject: string; assessmentType?: string }
+): Promise<PolicyContext> {
+  const searchParams = new URLSearchParams({
+    grade: params.grade.toString(),
+    subject: params.subject,
+    assessmentType: params.assessmentType || 'school_assessment',
+  });
+
+  // TODO: Thay bằng URL production khi deploy
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+  const url = `${apiBase}/policy-context/${taskType}?${searchParams}`;
+
+  console.info('[fetchPolicyContext]', { taskType, params, url });
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Không thể lấy policy context: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// ===== RAG CONTEXT (AI đọc thư viện user) =====
+
+/**
+ * Context chunk từ thư viện tài liệu
+ */
+export interface ContextChunk {
+  chunkId: string;
+  docId: string;
+  titleHint: string;
+  text: string;
+  page?: number;
+}
+
+export interface RagContextResponse {
+  contextChunks: ContextChunk[];
+  retrievalMeta: {
+    method: string;
+    topK: number;
+    filtersApplied: string[];
+    totalChunksSearched: number;
+  };
+}
+
+/**
+ * Fetch RAG context từ backend
+ * Chú thích: Lấy context chunks từ thư viện tài liệu để inject vào prompt
+ */
+export async function fetchRagContext(params: {
+  taskType: 'matrix' | 'exam' | 'lessonplan' | 'skkn';
+  libraryId?: string;
+  documentIds?: string[];
+  query?: string;
+  topic?: string;
+  topK?: number;
+}): Promise<RagContextResponse> {
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+  const url = `${apiBase}/rag/context`;
+
+  console.info('[fetchRagContext]', params);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // Cần auth
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Vui lòng đăng nhập để sử dụng tài liệu từ thư viện.');
+    }
+    throw new Error(`Không thể lấy context từ thư viện: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Build context section cho prompt từ chunks
+ */
+export function buildContextSection(chunks: ContextChunk[]): string {
+  if (chunks.length === 0) return '';
+
+  const chunkTexts = chunks.map((c, i) =>
+    `[Nguồn ${i + 1} - ${c.titleHint} (ID: ${c.chunkId})]\n${c.text}`
+  ).join('\n\n---\n\n');
+
+  return `
+TÀI LIỆU NGUỒN TỪ THƯ VIỆN:
+---
+${chunkTexts}
+---
+
+Khi tạo câu hỏi dựa trên tài liệu, thêm sources[] với chunkId và quote cho mỗi câu.
+`;
+}
+
+// ===== GENERIC SYSTEM PROMPTS (không hardcode công văn cụ thể) =====
+
+/**
+ * System prompt cho tạo ma trận - GENERIC
+ * Chú thích: policyText sẽ được inject vào {POLICY_TEXT} placeholder
+ */
+export function buildMatrixSystemPrompt(policyText: string): string {
+  return `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng ma trận đề kiểm tra theo các quy định hiện hành.
 
 NHIỆM VỤ: Tạo ma trận đề kiểm tra định kỳ cho môn học và lớp được yêu cầu.
 
-CẤU TRÚC ĐỀ THEO CV 7991 (BẮT BUỘC):
-1. Tổng điểm: 10 điểm
-2. Trắc nghiệm khách quan: 7 điểm
-   - Nhiều lựa chọn (MCQ): 3 điểm
-   - Đúng/Sai (TF): 2 điểm (mỗi câu 4 ý)
-   - Trả lời ngắn (SHORT): 2 điểm
-3. Tự luận (ESSAY): 3 điểm
-4. Tỷ lệ nhận thức: NB 40% / TH 30% / VD 30%
-5. Thời gian: 60 phút
+QUY ĐỊNH ÁP DỤNG:
+${policyText}
 
 MỨC ĐỘ NHẬN THỨC:
 - NB (Nhận biết): Nhớ, nhận ra kiến thức đã học
@@ -29,14 +147,21 @@ QUY TẮC:
 1. Phân bổ câu hỏi đều cho các chủ đề
 2. Mỗi chủ đề có từ 1-3 đơn vị kiến thức
 3. Tổng tỷ lệ % các chủ đề = 100%
-4. Số câu và điểm phải khớp với cấu trúc CV 7991
+4. Số câu và điểm phải khớp với quy định
 
 OUTPUT: JSON theo schema được cung cấp, KHÔNG có text giải thích.`;
+}
 
-// System prompt cho tạo đề từ ma trận
-export const EXAM_SYSTEM_PROMPT = `Bạn là chuyên gia giáo dục Việt Nam, chuyên soạn đề kiểm tra theo Công văn 7991/BGDĐT-GDTrH.
+/**
+ * System prompt cho tạo đề - GENERIC
+ */
+export function buildExamSystemPrompt(policyText: string): string {
+  return `Bạn là chuyên gia giáo dục Việt Nam, chuyên soạn đề kiểm tra theo các quy định hiện hành.
 
 NHIỆM VỤ: Dựa trên ma trận đề đã cho, sinh nội dung câu hỏi cụ thể cho từng mức độ và loại câu hỏi.
+
+QUY ĐỊNH ÁP DỤNG:
+${policyText}
 
 YÊU CẦU:
 1. MCQ: 4 lựa chọn A/B/C/D, 1 đáp án đúng
@@ -51,6 +176,19 @@ PHONG CÁCH:
 - Đáp án chính xác và có giải thích ngắn gọn
 
 OUTPUT: JSON theo schema ExamContent, KHÔNG có text giải thích.`;
+}
+
+// Legacy exports for backward compatibility
+// Chú thích: Các prompt cũ vẫn giữ để không break code hiện có, nhưng deprecated
+/** @deprecated Dùng buildMatrixSystemPrompt(policyText) thay thế */
+export const MATRIX_SYSTEM_PROMPT = buildMatrixSystemPrompt(
+  '- Thời gian: 60 phút\n- Tổng điểm: 10 điểm\n- Tỷ lệ NB/TH/VD: 40/30/30'
+);
+
+/** @deprecated Dùng buildExamSystemPrompt(policyText) thay thế */
+export const EXAM_SYSTEM_PROMPT = buildExamSystemPrompt(
+  '- Đề kiểm tra định kỳ theo quy định hiện hành'
+);
 
 // Schema hint cho matrix output
 export const MATRIX_SCHEMA_HINT = `
@@ -395,4 +533,161 @@ Trả về JSON theo schema ExamContent.`;
     systemPrompt: EXAM_SYSTEM_PROMPT,
     userPrompt,
   });
+}
+
+// ===== NEW: Policy-Driven Generation Functions =====
+
+export interface MatrixConstraintsV2 extends MatrixConstraints {
+  assessmentType?: 'school_assessment' | 'graduation_exam';
+}
+
+export interface GenerationMetadata {
+  policyRefs: string[];
+  policyVersion: string;
+  promptVersion: string;
+  model?: string;
+  generatedAt: string;
+}
+
+/**
+ * Sinh ma trận với policy context từ API (NEW - data-driven)
+ * Chú thích: Thay vì hardcode CV7991, lấy policyText từ /policy-context/matrix
+ */
+export async function generateMatrixWithPolicy(
+  constraints: MatrixConstraintsV2
+): Promise<{ matrix: any; metadata: GenerationMetadata }> {
+  // 1. Fetch policy context từ API
+  const policyContext = await fetchPolicyContext('matrix', {
+    grade: constraints.grade,
+    subject: constraints.subject,
+    assessmentType: constraints.assessmentType,
+  });
+
+  console.info('[generateMatrixWithPolicy] Policy context loaded:', {
+    policyRefs: policyContext.policyRefs,
+    policyVersion: policyContext.policyVersion,
+  });
+
+  // 2. Build system prompt với policyText
+  const systemPrompt = buildMatrixSystemPrompt(policyContext.policyText);
+
+  // 3. Build user prompt
+  const documentSection = constraints.documentContext
+    ? `
+TÀI LIỆU NGUỒN:
+---
+${constraints.documentContext.slice(0, 50000)}
+---
+Tạo ma trận bám sát tài liệu nguồn.
+`
+    : '';
+
+  const userPrompt = `${documentSection}
+Môn học: ${constraints.subject}
+Lớp: ${constraints.grade}
+Thời gian: ${constraints.duration || 60} phút
+Số chủ đề: ${constraints.numTopics || 4}
+${constraints.scope ? `Phạm vi: ${constraints.scope.join(', ')}` : ''}
+
+Schema mẫu:
+${JSON.stringify(policyContext.schemaHints, null, 2)}
+
+Trả về JSON theo schema Matrix.`;
+
+  // 4. Call AI
+  const matrix = await callAIJson({
+    systemPrompt,
+    userPrompt,
+  });
+
+  // 5. Return with metadata
+  const aiConfig = getAIConfig();
+  return {
+    matrix,
+    metadata: {
+      policyRefs: policyContext.policyRefs,
+      policyVersion: policyContext.policyVersion,
+      promptVersion: 'matrix-agent-v2.0.0',
+      model: aiConfig.modelId || undefined,
+      generatedAt: new Date().toISOString(),
+    },
+  };
+}
+
+/**
+ * Sinh đề với policy context từ API (NEW - data-driven)
+ */
+export async function generateExamWithPolicy(
+  matrix: any,
+  options: {
+    grade: number;
+    subject: string;
+    assessmentType?: 'school_assessment' | 'graduation_exam';
+    documentContext?: string;
+    sourceMode?: 'from_docs' | 'general_knowledge';
+  }
+): Promise<{ exam: any; metadata: GenerationMetadata }> {
+  // 1. Fetch policy context
+  const policyContext = await fetchPolicyContext('exam', {
+    grade: options.grade,
+    subject: options.subject,
+    assessmentType: options.assessmentType,
+  });
+
+  console.info('[generateExamWithPolicy] Policy context loaded:', {
+    policyRefs: policyContext.policyRefs,
+    policyVersion: policyContext.policyVersion,
+  });
+
+  // 2. Build system prompt
+  const systemPrompt = buildExamSystemPrompt(policyContext.policyText);
+
+  // 3. Build user prompt
+  const documentSection = options.documentContext
+    ? `
+TÀI LIỆU NGUỒN:
+---
+${options.documentContext.slice(0, 50000)}
+---
+${options.sourceMode === 'from_docs' ? 'Tất cả câu hỏi PHẢI dựa trên tài liệu. Thêm sources[] cho mỗi câu.' : ''}
+`
+    : '';
+
+  const userPrompt = `${documentSection}
+Dựa trên ma trận đề sau, sinh nội dung câu hỏi:
+
+MA TRẬN:
+${JSON.stringify(matrix, null, 2)}
+
+YÊU CẦU:
+- Tạo đủ số câu hỏi theo ma trận
+- MCQ: 4 lựa chọn, có đáp án và giải thích
+- TF: 4 mệnh đề Đ/S cho mỗi câu
+- SHORT: Đáp án ngắn gọn
+- ESSAY: Có rubric chấm điểm
+${options.sourceMode === 'from_docs' ? '- Thêm sources[] với chunkId và quote cho mỗi câu' : ''}
+
+Schema mẫu:
+${JSON.stringify(policyContext.schemaHints, null, 2)}
+
+Trả về JSON theo schema ExamContent.`;
+
+  // 4. Call AI
+  const exam = await callAIJson({
+    systemPrompt,
+    userPrompt,
+  });
+
+  // 5. Return with metadata
+  const aiConfig = getAIConfig();
+  return {
+    exam,
+    metadata: {
+      policyRefs: policyContext.policyRefs,
+      policyVersion: policyContext.policyVersion,
+      promptVersion: 'exam-agent-v2.0.0',
+      model: aiConfig.modelId || undefined,
+      generatedAt: new Date().toISOString(),
+    },
+  };
 }

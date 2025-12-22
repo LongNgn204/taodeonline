@@ -12,6 +12,7 @@
         "clean": "rimraf dist .wrangler"
     },
     "dependencies": {
+        "@exam-matrix/core": "workspace:*",
         "@exam-matrix/export": "workspace:*",
         "@exam-matrix/rag": "workspace:*",
         "@exam-matrix/shared": "workspace:*",

@@ -29,6 +29,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@exam-matrix/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@exam-matrix/export':
         specifier: workspace:*
         version: link:../../packages/export
