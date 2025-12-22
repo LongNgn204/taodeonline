@@ -1,14 +1,16 @@
 // Chú thích: Create Exam page - wizard tạo ma trận và đề thi - Revamped UI
 // Tích hợp Multi-Policy và Teacher Preferences
 // Gọi AI trực tiếp từ frontend, backend chỉ lưu lịch sử
+// Enhancement: Bắt buộc có tài liệu trong thư viện để tạo đề chuẩn xác
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight, Settings2, FileCode } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, ArrowRight, Settings2, FileCode, Upload, BookOpen, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { getAIConfig } from '../lib/ai-config';
 import { generateMatrixFrontend, generateExamFrontend } from '../lib/frontend-ai';
+import { fetchLibraryContext, validateLibraryForExamCreation, type LibraryContext } from '../lib/lib-documents';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
 import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
@@ -79,6 +81,51 @@ export default function CreateExam() {
     const [exam, setExam] = useState<any>(null);
     const [showEvidencePanel, setShowEvidencePanel] = useState(false);
 
+    // Chú thích: State cho document context - bắt buộc có tài liệu để tạo đề
+    const [libraryContext, setLibraryContext] = useState<LibraryContext | null>(null);
+    const [contextLoading, setContextLoading] = useState(true);
+    const [documentValidation, setDocumentValidation] = useState<{ isValid: boolean; message: string }>({
+        isValid: false,
+        message: 'Đang kiểm tra tài liệu...',
+    });
+
+    // Chú thích: Fetch library context khi component mount
+    useEffect(() => {
+        if (!libraryId) {
+            setContextLoading(false);
+            setDocumentValidation({
+                isValid: false,
+                message: 'Vui lòng chọn thư viện trước.',
+            });
+            return;
+        }
+
+        async function loadContext() {
+            setContextLoading(true);
+            try {
+                const context = await fetchLibraryContext(libraryId!);
+                setLibraryContext(context);
+                const validation = validateLibraryForExamCreation(context.documents);
+                setDocumentValidation(validation);
+                console.info('[CreateExam] Context loaded:', {
+                    isValid: validation.isValid,
+                    documentsCount: context.documents.length,
+                    chunksCount: context.chunks.length,
+                });
+            } catch (e) {
+                console.error('[CreateExam] Failed to load context:', e);
+                setDocumentValidation({
+                    isValid: false,
+                    message: 'Lỗi khi tải tài liệu. Vui lòng thử lại.',
+                });
+            } finally {
+                setContextLoading(false);
+            }
+        }
+
+        loadContext();
+    }, [libraryId]);
+
 
 
     // Chú thích: Gọi AI trực tiếp từ frontend, không qua backend
@@ -98,6 +145,11 @@ export default function CreateExam() {
             navigate('/settings');
             return;
         }
+        // Chú thích: Kiểm tra tài liệu bắt buộc
+        if (!documentValidation.isValid || !libraryContext) {
+            alert('Vui lòng upload tài liệu (SGK, sách bài tập) vào thư viện trước khi tạo đề.');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -109,12 +161,18 @@ export default function CreateExam() {
             }
             const library = libData.library;
 
-            // Gọi AI trực tiếp từ frontend
+            console.info('[CreateExam] Generating matrix with document context:', {
+                contextLength: libraryContext.combinedText.length,
+                tokensEst: libraryContext.totalTokens,
+            });
+
+            // Chú thích: Gọi AI với document context để tạo đề chuẩn xác
             const generatedMatrix = await generateMatrixFrontend({
                 subject: library.subject,
                 grade: library.grade,
                 duration: library.duration_minutes || 60,
                 numTopics,
+                documentContext: libraryContext.combinedText, // NEW: inject document content
             });
 
             setMatrix(generatedMatrix);
@@ -146,8 +204,11 @@ export default function CreateExam() {
 
         setLoading(true);
         try {
-            // Gọi AI trực tiếp từ frontend
-            const generatedExam = await generateExamFrontend(matrix);
+            // Chú thích: Gọi AI với document context để sinh đề bám sát tài liệu
+            const generatedExam = await generateExamFrontend(
+                matrix,
+                libraryContext?.combinedText // NEW: pass document content
+            );
 
             setExam(generatedExam);
             setStep('exam');
@@ -289,6 +350,52 @@ export default function CreateExam() {
                                                 />
                                             </div>
 
+                                            {/* Chú thích: Document Status Card - Hiển thị trạng thái tài liệu */}
+                                            <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-500/20">
+                                                <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2 block">
+                                                    Tài liệu nguồn (bắt buộc)
+                                                </label>
+                                                {contextLoading ? (
+                                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                        <div className="spinner w-4 h-4" />
+                                                        Đang kiểm tra tài liệu...
+                                                    </div>
+                                                ) : documentValidation.isValid ? (
+                                                    <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20">
+                                                        <BookOpen className="w-5 h-5 text-blue-500" />
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                                                {libraryContext?.documents.filter(d => d.extracted_text_status === 'done').length || 0} tài liệu sẵn sàng
+                                                            </p>
+                                                            <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
+                                                                ~{((libraryContext?.totalTokens || 0) / 1000).toFixed(1)}k tokens • AI sẽ đọc toàn bộ nội dung để tạo đề chuẩn xác
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/20">
+                                                        <div className="flex items-start gap-3">
+                                                            <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-orange-700 dark:text-orange-300 mb-1">
+                                                                    Cần có tài liệu nguồn
+                                                                </p>
+                                                                <p className="text-xs text-orange-600/80 dark:text-orange-400/70 mb-3">
+                                                                    {documentValidation.message}
+                                                                </p>
+                                                                <Link
+                                                                    to={libraryId ? `/libraries/${libraryId}` : '/libraries'}
+                                                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 dark:text-orange-400 hover:underline"
+                                                                >
+                                                                    <Upload className="w-4 h-4" />
+                                                                    Upload tài liệu vào thư viện
+                                                                </Link>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-500/20 flex items-center gap-4">
                                                 <div className="flex-1">
                                                     <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1.5 block">Số chủ đề mong muốn</label>
@@ -322,10 +429,24 @@ export default function CreateExam() {
                                     <div className="mt-6 flex justify-end">
                                         <button
                                             onClick={handleGenerateMatrix}
-                                            disabled={loading}
-                                            className="btn-primary w-full sm:w-auto py-3 px-6 shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2"
+                                            disabled={loading || !documentValidation.isValid || contextLoading}
+                                            className={`btn-primary w-full sm:w-auto py-3 px-6 shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2 ${!documentValidation.isValid || contextLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                                }`}
+                                            title={!documentValidation.isValid ? 'Cần upload tài liệu trước' : ''}
                                         >
-                                            {loading ? <div className="spinner w-5 h-5 border-white" /> : <><Wand2 className="w-5 h-5" /> Tạo ma trận ngay</>}
+                                            {loading ? (
+                                                <div className="spinner w-5 h-5 border-white" />
+                                            ) : !documentValidation.isValid ? (
+                                                <>
+                                                    <AlertCircle className="w-5 h-5" />
+                                                    Cần tài liệu nguồn
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Wand2 className="w-5 h-5" />
+                                                    Tạo ma trận ngay
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 </div>

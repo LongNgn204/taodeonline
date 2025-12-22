@@ -308,13 +308,29 @@ export interface MatrixConstraints {
   duration?: number;
   numTopics?: number;
   scope?: string[];
+  documentContext?: string; // NEW: Nội dung tài liệu từ thư viện (SGK, sách bài tập)
 }
 
 /**
  * Sinh ma trận đề từ frontend
+ * Chú thích: Nếu có documentContext, AI sẽ dựa vào nội dung thực tế để tạo ma trận chuẩn xác
  */
 export async function generateMatrixFrontend(constraints: MatrixConstraints): Promise<any> {
-  const userPrompt = `Môn học: ${constraints.subject}
+  // Chú thích: Xây dựng phần tài liệu nguồn nếu có
+  const documentSection = constraints.documentContext
+    ? `
+TÀI LIỆU NGUỒN (SGK/Sách bài tập):
+---
+${constraints.documentContext.slice(0, 50000)}
+---
+
+Dựa trên tài liệu nguồn trên, hãy xác định các chủ đề và đơn vị kiến thức THỰC TẾ có trong tài liệu.
+Tạo ma trận đề bám sát nội dung tài liệu, đảm bảo các câu hỏi có thể được trả lời từ nội dung đã cung cấp.
+`
+    : '';
+
+  const userPrompt = `${documentSection}
+Môn học: ${constraints.subject}
 Lớp: ${constraints.grade}
 Thời gian: ${constraints.duration || 60} phút
 Số chủ đề: ${constraints.numTopics || 4}
@@ -324,6 +340,7 @@ Tạo ma trận đề với ${constraints.numTopics || 4} chủ đề, đảm b�
 - Tổng điểm = 10 (MCQ 3đ + TF 2đ + SHORT 2đ + ESSAY 3đ)
 - Tỷ lệ NB/TH/VD = 40/30/30
 - Các đơn vị kiến thức phù hợp với nội dung môn học lớp ${constraints.grade}
+${constraints.documentContext ? '- Các chủ đề và đơn vị kiến thức PHẢI dựa trên tài liệu nguồn đã cung cấp' : ''}
 
 Schema mẫu:
 ${MATRIX_SCHEMA_HINT}
@@ -338,9 +355,25 @@ Trả về JSON theo schema Matrix.`;
 
 /**
  * Sinh đề thi từ ma trận
+ * Chú thích: Nếu có documentContext, AI sẽ tạo câu hỏi dựa trên nội dung thực tế
  */
-export async function generateExamFrontend(matrix: any): Promise<any> {
-  const userPrompt = `Dựa trên ma trận đề sau, sinh nội dung câu hỏi cụ thể:
+export async function generateExamFrontend(matrix: any, documentContext?: string): Promise<any> {
+  // Chú thích: Xây dựng phần tài liệu nguồn nếu có
+  const documentSection = documentContext
+    ? `
+TÀI LIỆU NGUỒN (SGK/Sách bài tập):
+---
+${documentContext.slice(0, 50000)}
+---
+
+QUAN TRỌNG: Tất cả câu hỏi PHẢI được tạo dựa trên nội dung tài liệu nguồn trên.
+Đảm bảo câu hỏi có thể được trả lời bằng thông tin trong tài liệu.
+Trích dẫn hoặc tham chiếu đến bài học/chương cụ thể khi phù hợp.
+`
+    : '';
+
+  const userPrompt = `${documentSection}
+Dựa trên ma trận đề sau, sinh nội dung câu hỏi cụ thể:
 
 MA TRẬN:
 ${JSON.stringify(matrix, null, 2)}
@@ -351,6 +384,7 @@ YÊU CẦU:
 - TF: 4 mệnh đề Đ/S cho mỗi câu
 - SHORT: Đáp án ngắn gọn
 - ESSAY: Có rubric chấm điểm
+${documentContext ? '- Nội dung câu hỏi PHẢI bám sát tài liệu nguồn đã cung cấp' : ''}
 
 Schema mẫu:
 ${EXAM_SCHEMA_HINT}
