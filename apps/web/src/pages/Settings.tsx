@@ -25,8 +25,8 @@ const AI_PROVIDERS = [
     },
     {
         id: 'openai',
-        name: 'OpenAI',
-        description: 'GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo.',
+        name: 'OpenAI (Khuyên dùng)',
+        description: 'GPT-5.2, GPT-5.1, GPT-Thinking.',
         keyPrefix: 'sk-proj-', // New project keys start with sk-proj, old sk-
         keyPattern: /^sk-(proj-)?[a-zA-Z0-9]{20,}/,
         color: 'from-green-500 to-emerald-600',
@@ -36,8 +36,8 @@ const AI_PROVIDERS = [
     },
     {
         id: 'google',
-        name: 'Google Gemini',
-        description: 'Gemini 1.5 Pro/Flash, Gemini 1.0.',
+        name: 'Google Gemini (Khuyên dùng)',
+        description: 'Gemini 2.5 Pro/Flash, Gemini 3.0 Pro Preview.',
         keyPrefix: 'AIza',
         color: 'from-blue-500 to-cyan-600',
         icon: ShieldCheck,
@@ -46,8 +46,8 @@ const AI_PROVIDERS = [
     },
     {
         id: 'anthropic',
-        name: 'Anthropic (Claude)',
-        description: 'Claude 3.5 Sonnet, Claude 3 Opus.',
+        name: 'Anthropic (Claude) (Khuyên dùng)',
+        description: 'Claude 4.5 Sonnet, Claude 4.5 Opus.',
         keyPrefix: 'sk-ant-',
         color: 'from-orange-500 to-amber-600',
         icon: Layers
