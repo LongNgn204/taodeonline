@@ -106,6 +106,11 @@ import { preferencesRoutes } from './routes/preferences.js';
 app.use('/preferences/*', authMiddleware);
 app.route('/preferences', preferencesRoutes);
 
+// Research Jobs routes (background processing)
+import { researchJobs } from './routes/research-jobs.js';
+app.use('/research-jobs/*', authMiddleware);
+app.route('/research-jobs', researchJobs);
+
 // Get current user
 app.get('/me', (c) => {
     const user = c.get('user');

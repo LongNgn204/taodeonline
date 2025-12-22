@@ -2,6 +2,7 @@
 // Tích hợp Multi-Policy và Teacher Preferences
 // Gọi AI trực tiếp từ frontend, backend chỉ lưu lịch sử
 // Enhancement: Bắt buộc có tài liệu trong thư viện để tạo đề chuẩn xác
+// Enhancement: Research mode với progress tracking
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -17,9 +18,10 @@ import { exportExamToWord, exportMatrixToExcel } from '../lib/exportUtils';
 import PolicySelector from '../components/PolicySelector';
 import TeacherNotesModal from '../components/TeacherNotesModal';
 import EvidencePanel from '../components/EvidencePanel';
+import ResearchProgress from '../components/ResearchProgress';
 
 
-type Step = 'config' | 'matrix' | 'exam' | 'export';
+type Step = 'config' | 'research' | 'matrix' | 'exam' | 'export';
 
 // const AI_PROVIDERS = [
 //     { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] },
@@ -89,6 +91,11 @@ export default function CreateExam() {
         message: 'Đang kiểm tra tài liệu...',
     });
 
+    // Chú thích: State cho research progress - theo dõi tiến độ nghiên cứu tài liệu
+    const [researchStage, setResearchStage] = useState<string>('reading');
+    const [researchProgress, setResearchProgress] = useState(0);
+    const [researchError, setResearchError] = useState<string | null>(null);
+
     // Chú thích: Fetch library context khi component mount
     useEffect(() => {
         if (!libraryId) {
@@ -129,6 +136,7 @@ export default function CreateExam() {
 
 
     // Chú thích: Gọi AI trực tiếp từ frontend, không qua backend
+    // Với research mode: chuyển sang step 'research' và animate progress
     async function handleGenerateMatrix() {
         if (!libraryId) {
             alert('Vui lòng chọn thư viện trước khi tạo đề. Hãy quay lại và chọn một thư viện.');
@@ -151,8 +159,18 @@ export default function CreateExam() {
             return;
         }
 
+        // Chú thích: Chuyển sang research step với progress animation
+        setStep('research');
+        setResearchStage('reading');
+        setResearchProgress(0);
+        setResearchError(null);
         setLoading(true);
+
         try {
+            // Stage 1: Reading documents
+            setResearchStage('reading');
+            setResearchProgress(30);
+
             // Lấy thông tin thư viện từ backend để biết môn/lớp
             const libRes = await api.get(`/libraries/${libraryId}`);
             const libData = await libRes.json();
@@ -161,10 +179,18 @@ export default function CreateExam() {
             }
             const library = libData.library;
 
+            // Stage 2: Analyzing structure
+            setResearchStage('analyzing');
+            setResearchProgress(50);
+
             console.info('[CreateExam] Generating matrix with document context:', {
                 contextLength: libraryContext.combinedText.length,
                 tokensEst: libraryContext.totalTokens,
             });
+
+            // Stage 3: Generating matrix
+            setResearchStage('generating');
+            setResearchProgress(20);
 
             // Chú thích: Gọi AI với document context để tạo đề chuẩn xác
             const generatedMatrix = await generateMatrixFrontend({
@@ -172,8 +198,15 @@ export default function CreateExam() {
                 grade: library.grade,
                 duration: library.duration_minutes || 60,
                 numTopics,
-                documentContext: libraryContext.combinedText, // NEW: inject document content
+                documentContext: libraryContext.combinedText,
             });
+
+            // Stage 4: Done
+            setResearchStage('done');
+            setResearchProgress(100);
+
+            // Small delay to show completion
+            await new Promise((r) => setTimeout(r, 500));
 
             setMatrix(generatedMatrix);
             setStep('matrix');
@@ -189,7 +222,8 @@ export default function CreateExam() {
 
         } catch (e: any) {
             console.error('Failed to generate matrix', e);
-            alert(e.message || 'Lỗi khi tạo ma trận. Vui lòng thử lại.');
+            setResearchError(e.message || 'Lỗi khi tạo ma trận. Vui lòng thử lại.');
+            // Stay on research step to show error
         } finally {
             setLoading(false);
         }
@@ -278,26 +312,27 @@ export default function CreateExam() {
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full -z-10" />
                     <div
                         className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full -z-10 transition-all duration-500 ease-out"
-                        style={{ width: `${(['config', 'matrix', 'exam', 'export'].indexOf(step) / 3) * 100}%` }}
+                        style={{ width: `${(['config', 'research', 'matrix', 'exam', 'export'].indexOf(step) / 4) * 100}%` }}
                     />
 
-                    {(['config', 'matrix', 'exam', 'export'] as Step[]).map((s, i) => {
-                        const currentIndex = ['config', 'matrix', 'exam', 'export'].indexOf(step);
+                    {(['config', 'research', 'matrix', 'exam', 'export'] as Step[]).map((s, i) => {
+                        const currentIndex = ['config', 'research', 'matrix', 'exam', 'export'].indexOf(step);
                         const isCompleted = i < currentIndex;
                         const isCurrent = i === currentIndex;
 
                         return (
                             <div key={s} className="flex flex-col items-center gap-2 bg-gray-50 dark:bg-[#0a0a0a] px-2 rounded-xl">
                                 <div
-                                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-lg ${isCompleted || isCurrent
+                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-lg ${isCompleted || isCurrent
                                         ? 'bg-gradient-to-br from-primary-500 to-accent-500 text-white shadow-primary-500/25'
                                         : 'bg-white dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700'
                                         } ${isCurrent ? 'scale-110 ring-4 ring-primary-500/10' : ''}`}
                                 >
-                                    {isCompleted ? <Check className="w-6 h-6" /> : i + 1}
+                                    {isCompleted ? <Check className="w-5 h-5 md:w-6 md:h-6" /> : i + 1}
                                 </div>
-                                <span className={`text-sm font-medium ${isCurrent ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}>
+                                <span className={`text-xs md:text-sm font-medium ${isCurrent ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}>
                                     {s === 'config' && 'Cấu hình'}
+                                    {s === 'research' && 'Nghiên cứu'}
                                     {s === 'matrix' && 'Ma trận'}
                                     {s === 'exam' && 'Đề thi'}
                                     {s === 'export' && 'Hoàn tất'}
@@ -465,6 +500,38 @@ export default function CreateExam() {
                                         className="btn-primary py-2.5 px-6"
                                     >
                                         Đi tới Cài đặt
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Research Step - AI đang nghiên cứu tài liệu */}
+                    {step === 'research' && (
+                        <div className="animate-fade-in max-w-2xl mx-auto">
+                            <ResearchProgress
+                                currentStageId={researchStage}
+                                progress={researchProgress}
+                                documentsCount={libraryContext?.documents.filter(d => d.extracted_text_status === 'done').length || 0}
+                                tokensCount={libraryContext?.totalTokens || 0}
+                                error={researchError || undefined}
+                            />
+
+                            {/* Retry button khi có lỗi */}
+                            {researchError && (
+                                <div className="mt-6 flex justify-center gap-4">
+                                    <button
+                                        onClick={() => setStep('config')}
+                                        className="btn-secondary"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                        Quay lại cấu hình
+                                    </button>
+                                    <button
+                                        onClick={handleGenerateMatrix}
+                                        className="btn-primary"
+                                    >
+                                        Thử lại
                                     </button>
                                 </div>
                             )}
