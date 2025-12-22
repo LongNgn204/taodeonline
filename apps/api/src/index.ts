@@ -110,6 +110,18 @@ import { ragContextRoutes } from './routes/rag-context.js';
 app.use('/rag/*', authMiddleware);
 app.route('/rag', ragContextRoutes);
 
+// Regulations routes (H1 - quản lý văn bản pháp lý)
+import { regulationsRoutes } from './routes/regulations.js';
+app.route('/regulations', regulationsRoutes); // Public read, auth for write
+
+// Policy Packs routes (H2 - quản lý policy packs)
+import { policyPacksRoutes } from './routes/policy-packs.js';
+app.route('/policy-packs', policyPacksRoutes); // Public read, auth for write
+
+// Validate routes (H3 - validate matrix/exam)
+import { validateRoutes } from './routes/validate.js';
+app.route('/validate', validateRoutes); // Public
+
 // Teacher Preferences routes
 import { preferencesRoutes } from './routes/preferences.js';
 app.use('/preferences/*', authMiddleware);
