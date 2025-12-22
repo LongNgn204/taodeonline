@@ -30,6 +30,10 @@ import CameraGrading from './pages/CameraGrading';
 import Gradebook from './pages/Gradebook';
 import Guide7991 from './pages/Guide7991';
 
+// New Pages (Final Completion)
+import LessonPlan from './pages/LessonPlan';
+import Skkn from './pages/Skkn';
+
 function App() {
     const { user } = useAuth();
     // ...
@@ -63,6 +67,10 @@ function App() {
                 <Route path="/ai-hub" element={<AIHub />} />
                 <Route path="/exams/:id/analytics" element={<AnalyticsDashboard />} />
                 <Route path="/usage" element={<TokenDashboard />} />
+
+                {/* New Modules */}
+                <Route path="/lesson-plan" element={<LessonPlan />} />
+                <Route path="/skkn" element={<Skkn />} />
             </Route>
 
             {/* Student Portal Routes */}

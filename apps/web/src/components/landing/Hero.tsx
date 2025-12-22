@@ -116,7 +116,7 @@ export default function Hero() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Brain className="w-4 h-4 text-purple-400" />
-                                <span>AI Model: GPT-4o & Gemini Pro</span>
+                                <span>AI Model: GPT-5.2 Thinking & Gemini 3 Pro, Claude Opus 4.5</span>
                             </div>
                         </div>
                     </motion.div>
