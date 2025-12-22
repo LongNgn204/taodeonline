@@ -158,7 +158,7 @@ export default function Hero() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400">Ma trận kiến thức</p>
-                                    <p className="font-bold text-lg text-purple-400">Chuẩn 7991</p>
+                                    <p className="font-bold text-lg text-purple-400">Đa Công Văn</p>
                                 </div>
                             </div>
                         </motion.div>

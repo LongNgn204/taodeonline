@@ -6,7 +6,6 @@ import {
     BookOpen,
     Lightbulb,
     CheckCircle,
-    ArrowRight,
     Sparkles,
     Target,
     Users
@@ -170,34 +169,138 @@ export default function AIHub() {
                     )}
 
                     {activeTab === 'practice' && (
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                                <Lightbulb className="w-8 h-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                                Thực hành với AI
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                                Luyện tập viết prompt, kiểm chứng đáp án và tạo câu hỏi chất lượng.
-                            </p>
-                            <div className="grid gap-4 text-left mt-6">
-                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Prompt mẫu CV 7991 (Nhận biết):</h4>
-                                    <code className="block text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-2 rounded">
-                                        "Tạo 1 câu hỏi trắc nghiệm mức độ Nhận biết về [Chủ đề], yêu cầu học sinh nhận diện [Khái niệm]. 4 đáp án, 1 đúng."
-                                    </code>
+                        <div className="space-y-6">
+                            {/* Interactive Prompt Builder */}
+                            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                                        <Lightbulb className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                            Thực hành viết Prompt
+                                        </h3>
+                                        <p className="text-sm text-gray-500">Chọn mẫu và tùy chỉnh theo nhu cầu</p>
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Prompt mẫu CV 7991 (Vận dụng):</h4>
-                                    <code className="block text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-2 rounded">
-                                        "Tạo 1 bài toán thực tế mức độ Vận dụng, yêu cầu áp dụng [Công thức/Định lý] để giải quyết vấn đề [Tình huống]. Kèm lời giải chi tiết."
-                                    </code>
+
+                                {/* Prompt Templates Grid */}
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {/* CV 7991 Templates */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">CV 7991 - KTĐG</h4>
+
+                                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Mức Nhận biết (NB)</span>
+                                                <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">Dễ</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Tạo 1 câu hỏi trắc nghiệm mức Nhận biết về [Chủ đề].
+Yêu cầu: Học sinh nhận diện/nhớ lại [Khái niệm].
+4 đáp án, 1 đúng. Giải thích ngắn.`}
+                                            </code>
+                                        </div>
+
+                                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Mức Thông hiểu (TH)</span>
+                                                <span className="text-xs px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full">TB</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Tạo 1 câu hỏi trắc nghiệm mức Thông hiểu về [Chủ đề].
+Yêu cầu: Học sinh giải thích/so sánh [Khái niệm].
+4 đáp án, 1 đúng. Kèm lời giải chi tiết.`}
+                                            </code>
+                                        </div>
+
+                                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Mức Vận dụng (VD)</span>
+                                                <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">Khó</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Tạo 1 bài toán thực tế mức Vận dụng.
+Áp dụng [Công thức/Định lý] để giải quyết [Tình huống].
+Kèm lời giải chi tiết theo từng bước.`}
+                                            </code>
+                                        </div>
+                                    </div>
+
+                                    {/* CV 4117 Templates */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">CV 4117 - TN THPT</h4>
+
+                                        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Câu hỏi Đúng/Sai</span>
+                                                <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">4 mệnh đề</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Tạo 1 câu hỏi Đúng/Sai theo CV 4117 về [Chủ đề].
+Gồm 4 mệnh đề (a, b, c, d).
+2 mệnh đề đúng, 2 mệnh đề sai.
+Đáp án + giải thích từng mệnh đề.`}
+                                            </code>
+                                        </div>
+
+                                        <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Trả lời ngắn</span>
+                                                <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full">Điền đáp số</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Tạo 1 câu hỏi trả lời ngắn về [Chủ đề].
+Học sinh điền kết quả (số hoặc từ ngắn).
+Đáp án duy nhất, không có đơn vị.`}
+                                            </code>
+                                        </div>
+
+                                        <div className="p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-pink-700 dark:text-pink-300">MCQ với RAG</span>
+                                                <span className="text-xs px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">Có nguồn</span>
+                                            </div>
+                                            <code className="block text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded font-mono whitespace-pre-wrap">
+                                                {`Dựa vào tài liệu đã cung cấp, tạo MCQ về [Chủ đề].
+Trích dẫn chính xác từ SGK.
+Kèm [sources] để student có thể verify.`}
+                                            </code>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quick Actions */}
+                                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                    <button className="btn-primary flex-1 flex items-center justify-center gap-2">
+                                        <Sparkles className="w-4 h-4" />
+                                        Thử ngay với AI
+                                    </button>
+                                    <button className="btn-secondary flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4" />
+                                        Xem thêm mẫu
+                                    </button>
                                 </div>
                             </div>
-                            <button className="btn-primary inline-flex items-center gap-2">
-                                Bắt đầu thực hành
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
+
+                            {/* Tips Cards */}
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-500/20">
+                                    <CheckCircle className="w-5 h-5 text-green-500 mb-2" />
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Kiểm tra đáp án</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Luôn verify với SGK gốc</p>
+                                </div>
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-500/20">
+                                    <Target className="w-5 h-5 text-blue-500 mb-2" />
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Cụ thể hoá</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Prompt càng chi tiết, output càng tốt</p>
+                                </div>
+                                <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-200 dark:border-purple-500/20">
+                                    <Users className="w-5 h-5 text-purple-500 mb-2" />
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Chia sẻ</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Prompt hay? Đóng góp cho cộng đồng</p>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </>

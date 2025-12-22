@@ -6,7 +6,6 @@ import {
     JobState,
     createJob,
     saveJob,
-    getJob,
     updateJobProgress,
     completeJob,
     failJob,

@@ -10,7 +10,7 @@ import { Wand2, ChevronLeft, Check, Download, Zap, BrainCircuit, FileText, Arrow
 import { api } from '../lib/api';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { getAIConfig } from '../lib/ai-config';
-import { generateMatrixFrontend, generateExamFrontend } from '../lib/frontend-ai';
+import { generateMatrixWithPolicy, generateExamWithPolicy, type GenerationMetadata } from '../lib/frontend-ai';
 import { fetchLibraryContext, validateLibraryForExamCreation, type LibraryContext } from '../lib/lib-documents';
 import PresenceIndicator from '../components/PresenceIndicator';
 import MatrixEditor from '../components/MatrixEditor';
@@ -82,6 +82,7 @@ export default function CreateExam() {
     const [matrix, setMatrix] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
     const [showEvidencePanel, setShowEvidencePanel] = useState(false);
+    const [policyResult, setPolicyResult] = useState<{ matrix: any; metadata: GenerationMetadata } | null>(null);
 
     // Chú thích: State cho document context - bắt buộc có tài liệu để tạo đề
     const [libraryContext, setLibraryContext] = useState<LibraryContext | null>(null);
@@ -192,13 +193,14 @@ export default function CreateExam() {
             setResearchStage('generating');
             setResearchProgress(20);
 
-            // Chú thích: Gọi AI với document context để tạo đề chuẩn xác
-            const generatedMatrix = await generateMatrixFrontend({
+            // Chú thích: Gọi AI với policy context + document context
+            const result = await generateMatrixWithPolicy({
                 subject: library.subject,
                 grade: library.grade,
                 duration: library.duration_minutes || 60,
                 numTopics,
                 documentContext: libraryContext.combinedText,
+                assessmentType: 'school_assessment', // TODO: make selectable
             });
 
             // Stage 4: Done
@@ -208,8 +210,14 @@ export default function CreateExam() {
             // Small delay to show completion
             await new Promise((r) => setTimeout(r, 500));
 
-            setMatrix(generatedMatrix);
+            setMatrix(result.matrix);
+            setPolicyResult(result);
             setStep('matrix');
+
+            console.info('[CreateExam] Matrix generated with policy:', {
+                policyRefs: result.metadata.policyRefs,
+                policyVersion: result.metadata.policyVersion,
+            });
 
             // Lưu lịch sử tạo ma trận lên backend (async, không block UI)
             api.post('/exams/log-generation', {
@@ -217,7 +225,8 @@ export default function CreateExam() {
                 type: 'matrix',
                 provider,
                 model,
-                resultJson: JSON.stringify(generatedMatrix),
+                policyRefs: result.metadata.policyRefs,
+                resultJson: JSON.stringify(result.matrix),
             }).catch(e => console.warn('[log] Failed to log matrix generation:', e));
 
         } catch (e: any) {
@@ -238,14 +247,29 @@ export default function CreateExam() {
 
         setLoading(true);
         try {
-            // Chú thích: Gọi AI với document context để sinh đề bám sát tài liệu
-            const generatedExam = await generateExamFrontend(
+            // Lấy thông tin thư viện để biết môn/lớp
+            const libRes = await api.get(`/libraries/${libraryId}`);
+            const libData = await libRes.json();
+            const library = libData.library;
+
+            // Chú thích: Gọi AI với policy context + document context
+            const result = await generateExamWithPolicy(
                 matrix,
-                libraryContext?.combinedText // NEW: pass document content
+                {
+                    grade: library?.grade || matrix.grade,
+                    subject: library?.subject || matrix.subject,
+                    assessmentType: 'school_assessment',
+                    documentContext: libraryContext?.combinedText,
+                    sourceMode: libraryContext ? 'from_docs' : 'general_knowledge',
+                }
             );
 
-            setExam(generatedExam);
+            setExam(result.exam);
             setStep('exam');
+
+            console.info('[CreateExam] Exam generated with policy:', {
+                policyRefs: result.metadata.policyRefs,
+            });
 
             // Lưu lịch sử sinh đề lên backend (async)
             api.post('/exams/log-generation', {
@@ -253,7 +277,8 @@ export default function CreateExam() {
                 type: 'exam',
                 provider,
                 model,
-                resultJson: JSON.stringify(generatedExam),
+                policyRefs: result.metadata.policyRefs,
+                resultJson: JSON.stringify(result.exam),
             }).catch(e => console.warn('[log] Failed to log exam generation:', e));
 
         } catch (e: any) {
@@ -546,9 +571,15 @@ export default function CreateExam() {
                                     <p className="text-gray-500 text-sm">Xem và điều chỉnh ma trận trước khi sinh đề</p>
                                 </div>
                                 <div className="flex gap-2 items-center">
-                                    <div className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
-                                        Chuẩn 7991
-                                    </div>
+                                    {policyResult?.metadata?.policyRefs?.map((ref: string) => (
+                                        <div key={ref} className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
+                                            Chuẩn {ref.toUpperCase()}
+                                        </div>
+                                    )) || (
+                                            <div className="px-3 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium border border-green-200 dark:border-green-500/20">
+                                                Chuẩn 7991
+                                            </div>
+                                        )}
                                     <EvidencePanel
                                         evidences={[]}
                                         isOpen={showEvidencePanel}

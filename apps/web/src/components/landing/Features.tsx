@@ -5,7 +5,8 @@ import {
     FileOutput,
     Lightbulb,
     Smartphone,
-    Layers
+    BookOpen,
+    Quote
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -24,7 +25,7 @@ export default function Features() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(200px,auto)]">
-                    {/* Feature 1: Matrix - Large Span */}
+                    {/* Feature 1: Matrix + Data-Driven Policy - Large Span */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -35,12 +36,17 @@ export default function Features() {
                             <TableProperties className="w-64 h-64" />
                         </div>
                         <div className="relative z-10">
-                            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400">
-                                <TableProperties className="w-6 h-6" />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
+                                    <TableProperties className="w-6 h-6" />
+                                </div>
+                                <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">
+                                    🆕 Data-Driven Policy
+                                </div>
                             </div>
-                            <h4 className="text-2xl font-bold mb-3">Ma trận Chuẩn 7991</h4>
+                            <h4 className="text-2xl font-bold mb-3">Ma trận Đa Công Văn</h4>
                             <p className="text-gray-400 max-w-md">
-                                Xây dựng ma trận đề kiểm tra chi tiết đến từng đơn vị kiến thức (NB-TH-VD-VDC). Tự động mapping câu hỏi vào ma trận với độ chính xác tuyệt đối.
+                                Hỗ trợ CV7991 (KTĐK), CV4117 (TN THPT). Policy Engine tự động áp dụng quy định phù hợp theo môn/lớp. Không còn hardcode - 100% data-driven.
                             </p>
                         </div>
                     </motion.div>
@@ -133,29 +139,52 @@ export default function Features() {
                         </p>
                     </motion.div>
 
-                    {/* Feature 6: Question Bank */}
+                    {/* Feature 6: RAG Context - NEW */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.5 }}
-                        className="md:col-span-1 p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                        className="md:col-span-1 p-6 rounded-3xl bg-gradient-to-br from-indigo-600/50 to-purple-600/30 border border-indigo-500/30 hover:border-indigo-400/50 transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-3 text-cyan-400">
-                            <Layers className="w-5 h-5" />
+                        <div className="w-10 h-10 bg-indigo-500/30 rounded-lg flex items-center justify-center mb-3 text-indigo-300">
+                            <BookOpen className="w-5 h-5" />
                         </div>
-                        <h4 className="text-lg font-bold mb-2">Ngân hàng Câu hỏi</h4>
-                        <p className="text-gray-400 text-sm">
-                            Phân loại theo Taxonomy. Chia sẻ cấp tổ/trường.
+                        <div className="flex items-center gap-2 mb-2">
+                            <h4 className="text-lg font-bold">RAG Context</h4>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300">MỚI</span>
+                        </div>
+                        <p className="text-gray-300 text-sm">
+                            Upload SGK, AI học từ tài liệu thực để sinh câu hỏi chính xác với nguồn trích dẫn.
                         </p>
                     </motion.div>
 
-                    {/* Feature 7: AI Hub */}
+                    {/* Feature 7: Citations */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.6 }}
+                        className="md:col-span-1 p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                    >
+                        <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mb-3 text-amber-400">
+                            <Quote className="w-5 h-5" />
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <h4 className="text-lg font-bold">Citations</h4>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300">MỚI</span>
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                            Mỗi câu hỏi đính kèm nguồn trích dẫn từ tài liệu gốc.
+                        </p>
+                    </motion.div>
+
+                    {/* Feature 8: AI Hub */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.7 }}
                         className="md:col-span-1 p-6 rounded-3xl bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/20"
                     >
                         <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-white">
@@ -163,7 +192,7 @@ export default function Features() {
                         </div>
                         <h4 className="text-lg font-bold mb-2">Trung tâm AI</h4>
                         <p className="text-blue-100 text-sm">
-                            Đào tạo kỹ năng Prompt Engineering cho giáo viên.
+                            BYOK: Dùng API key riêng (OpenRouter, Google, OpenAI...)
                         </p>
                     </motion.div>
 

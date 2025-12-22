@@ -1,8 +1,6 @@
 // Chú thích: Progress Bar Component cho Job Manager
 // M1: UI hiển thị progress với stages
 
-import React from 'react';
-
 interface ProgressBarProps {
     value: number; // 0-100
     label?: string;

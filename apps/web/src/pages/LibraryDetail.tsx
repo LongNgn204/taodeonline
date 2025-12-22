@@ -299,6 +299,41 @@ export default function LibraryDetail() {
                             </Link>
                         </div>
                     )}
+
+                    {/* RAG Preview Section */}
+                    {documents.length > 0 && (
+                        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-6">
+                            <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-primary-500" />
+                                RAG Preview
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                Xem context chunks từ tài liệu. AI sẽ dùng dữ liệu này để sinh câu hỏi.
+                            </p>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const res = await api.get(`/rag/preview/${id}`);
+                                        const data = await res.json();
+                                        if (res.ok && data.chunks) {
+                                            alert(`📚 RAG Preview:\n\nTìm thấy ${data.chunks.length} chunks.\n\nMẫu đầu tiên:\n"${data.chunks[0]?.text?.slice(0, 200)}..."`);
+                                        } else {
+                                            alert('Chưa có chunks. Vui lòng upload tài liệu trước.');
+                                        }
+                                    } catch (e) {
+                                        console.error('RAG preview failed', e);
+                                        alert('Lỗi khi tải RAG preview');
+                                    }
+                                }}
+                                className="w-full py-2.5 px-4 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium text-sm hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors border border-primary-200 dark:border-primary-500/20"
+                            >
+                                Xem Chunks
+                            </button>
+                            <p className="text-xs text-gray-400 mt-2 text-center font-mono">
+                                API: /rag/preview/{id}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

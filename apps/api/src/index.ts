@@ -132,6 +132,21 @@ import { researchJobs } from './routes/research-jobs.js';
 app.use('/research-jobs/*', authMiddleware);
 app.route('/research-jobs', researchJobs);
 
+// L2: Lesson Plans routes
+import { lessonPlanRoutes } from './routes/lesson-plans.js';
+app.use('/lessonplans/*', authMiddleware);
+app.route('/lessonplans', lessonPlanRoutes);
+
+// L3: SKKN (Sáng kiến kinh nghiệm) routes
+import { skknRoutes } from './routes/skkn.js';
+app.use('/skkn/*', authMiddleware);
+app.route('/skkn', skknRoutes);
+
+// L4: QA + Guardrails routes
+import { qaRoutes } from './routes/qa.js';
+app.use('/qa/*', authMiddleware);
+app.route('/qa', qaRoutes);
+
 // Get current user
 app.get('/me', (c) => {
     const user = c.get('user');

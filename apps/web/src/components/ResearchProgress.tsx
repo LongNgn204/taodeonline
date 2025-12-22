@@ -1,7 +1,8 @@
 // Chú thích: ResearchProgress component - hiển thị tiến độ nghiên cứu tài liệu
 // Các giai đoạn: Đọc tài liệu → Phân tích cấu trúc → Tạo ma trận → Hoàn tất
+// F3.1: Integrate với useJob - thêm cancel button
 
-import { BookOpen, Brain, FileText, Check, Loader2 } from 'lucide-react';
+import { BookOpen, Brain, FileText, Check, Loader2, XCircle } from 'lucide-react';
 
 export interface ResearchStage {
     id: string;
@@ -23,6 +24,8 @@ interface ResearchProgressProps {
     tokensCount: number;
     estimatedSeconds?: number;
     error?: string;
+    onCancel?: () => void; // F3.1: Cancel callback từ useJob hook
+    jobId?: string; // F3.1: Job ID để display
 }
 
 const IconMap = {
@@ -39,6 +42,8 @@ export default function ResearchProgress({
     tokensCount,
     estimatedSeconds,
     error,
+    onCancel,
+    jobId,
 }: ResearchProgressProps) {
     const currentIndex = RESEARCH_STAGES.findIndex((s) => s.id === currentStageId);
 
@@ -61,6 +66,11 @@ export default function ResearchProgress({
                 <p className="text-gray-500 dark:text-gray-400">
                     Đang phân tích {documentsCount} tài liệu (~{(tokensCount / 1000).toFixed(1)}k tokens)
                 </p>
+                {jobId && (
+                    <p className="text-xs text-gray-400 mt-1 font-mono">
+                        Job: {jobId.slice(0, 8)}...
+                    </p>
+                )}
             </div>
 
             {/* Error State */}
@@ -164,6 +174,19 @@ export default function ResearchProgress({
                 </p>
             )}
 
+            {/* Cancel Button - F3.1 */}
+            {onCancel && currentStageId !== 'done' && !error && (
+                <div className="flex justify-center">
+                    <button
+                        onClick={onCancel}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors border border-gray-200 dark:border-white/10 hover:border-red-200 dark:hover:border-red-500/30"
+                    >
+                        <XCircle className="w-4 h-4" />
+                        Hủy quá trình
+                    </button>
+                </div>
+            )}
+
             {/* Tip */}
             <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20">
                 <p className="text-sm text-amber-700 dark:text-amber-300">
@@ -173,3 +196,4 @@ export default function ResearchProgress({
         </div>
     );
 }
+

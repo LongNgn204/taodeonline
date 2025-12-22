@@ -575,6 +575,56 @@ export default function Settings() {
                     </div>
                 </div>
             </div>
+
+            {/* Policy Pack Configuration Section */}
+            <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-6 animate-fade-in-up">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                        <Layers className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cấu hình Policy</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Quy định áp dụng khi tạo ma trận và đề thi</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Default Assessment Type */}
+                    <div className="p-4 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Loại đánh giá mặc định
+                        </label>
+                        <select
+                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                            defaultValue="school_assessment"
+                            onChange={(e) => localStorage.setItem('default_assessment_type', e.target.value)}
+                        >
+                            <option value="school_assessment">Kiểm tra định kỳ (KTĐK)</option>
+                            <option value="graduation_exam">Thi tốt nghiệp THPT</option>
+                        </select>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Quy định: CV7991 (KTĐK) hoặc CV4117 (TN THPT)
+                        </p>
+                    </div>
+
+                    {/* Policy Info */}
+                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-500/10">
+                        <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4" />
+                            Về Data-Driven Policy
+                        </h3>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                            Hệ thống tự động áp dụng quy định phù hợp từ backend API dựa trên môn học, lớp và loại đánh giá.
+                            Không còn hardcode công văn 7991 - giờ hỗ trợ đa công văn.
+                        </p>
+                        <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-500/20 text-xs text-blue-600 dark:text-blue-400">
+                            <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+                                API: /policy-context/*
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

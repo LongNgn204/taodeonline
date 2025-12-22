@@ -1,7 +1,9 @@
 // Chú thích: ExamPreview component - hiển thị đề thi và đáp án
+// F3.2: Integrate CitationViewer component
 
 import { useState } from 'react';
-import { RefreshCw, Eye, EyeOff, ChevronDown, ChevronUp, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Eye, EyeOff, ChevronDown, ChevronUp, CheckCircle, XCircle, BookOpen } from 'lucide-react';
+import CitationViewer from './CitationViewer';
 
 interface MCQOption {
     label: string;
@@ -222,7 +224,7 @@ export default function ExamPreview({
                                     </div>
                                 )}
 
-                                {/* Sources */}
+                                {/* Sources - F3.2: Using CitationViewer */}
                                 {sourcesVisible && question.sources.length > 0 && (
                                     <div className="mt-3">
                                         <button
@@ -234,21 +236,18 @@ export default function ExamPreview({
                                             ) : (
                                                 <ChevronDown className="w-4 h-4" />
                                             )}
+                                            <BookOpen className="w-4 h-4" />
                                             {question.sources.length} nguồn trích dẫn
                                         </button>
                                         {expandedSources.has(question.id) && (
-                                            <div className="mt-2 space-y-2">
-                                                {question.sources.map((src, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-sm"
-                                                    >
-                                                        <span className="text-xs text-gray-400">[{src.chunkId}]</span>
-                                                        <p className="italic text-gray-600 dark:text-gray-400">
-                                                            "{src.quote}"
-                                                        </p>
-                                                    </div>
-                                                ))}
+                                            <div className="mt-2">
+                                                <CitationViewer
+                                                    sources={question.sources.map(src => ({
+                                                        doc_id: src.chunkId,
+                                                        quote: src.quote,
+                                                    }))}
+                                                    maxDisplay={5}
+                                                />
                                             </div>
                                         )}
                                     </div>
