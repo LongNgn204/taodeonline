@@ -691,3 +691,281 @@ Trả về JSON theo schema ExamContent.`;
     },
   };
 }
+
+// ===== LESSON PLAN GENERATION (CV 5512 / 2345 / 1001) =====
+
+/**
+ * System prompt cho tạo Kế hoạch Bài dạy - GENERIC
+ * Chú thích: policyText từ policy pack sẽ được inject vào
+ */
+export function buildLessonPlanSystemPrompt(policyText: string): string {
+  return `Bạn là chuyên gia giáo dục Việt Nam, chuyên xây dựng Kế hoạch Bài dạy theo các quy định của Bộ GD&ĐT.
+
+NHIỆM VỤ: Tạo Kế hoạch Bài dạy hoàn chỉnh cho bài học được yêu cầu.
+
+QUY ĐỊNH ÁP DỤNG:
+${policyText}
+
+NGUYÊN TẮC THIẾT KẾ:
+1. Lấy học sinh làm trung tâm - hoạt động hóa người học
+2. Phát triển năng lực và phẩm chất theo CTGDPT 2018
+3. Tích hợp liên môn và thực tiễn khi phù hợp
+4. Đánh giá quá trình xuyên suốt bài học
+
+QUY TẮC:
+1. Mỗi hoạt động phải có: Mục tiêu, Nội dung, Sản phẩm, Tổ chức thực hiện
+2. Thời lượng các hoạt động phải cộng lại = tổng thời gian bài dạy
+3. Sản phẩm học tập phải đo lường được
+4. Tổ chức thực hiện phải cụ thể, rõ vai trò GV-HS
+
+OUTPUT: JSON theo schema LessonPlanOutput, KHÔNG có text giải thích.`;
+}
+
+// Schema hint cho Lesson Plan output
+export const LESSONPLAN_SCHEMA_HINT = `{
+  "version": "lessonplan-v1.0.0",
+  "title": "Tên bài dạy",
+  "subject": "Môn học",
+  "grade": 10,
+  "duration": 45,
+  "policyRef": "CV5512-2020",
+  
+  "objectives": {
+    "knowledge": [
+      "Học sinh nêu được...",
+      "Học sinh giải thích được..."
+    ],
+    "competencies": {
+      "general": [
+        "Tự chủ và tự học: ...",
+        "Giao tiếp và hợp tác: ..."
+      ],
+      "specific": [
+        "Năng lực đặc thù môn: ..."
+      ]
+    },
+    "qualities": [
+      "Trách nhiệm: Hoàn thành nhiệm vụ học tập",
+      "Chăm chỉ: Tích cực tham gia hoạt động"
+    ]
+  },
+  
+  "materials": {
+    "teacher": ["SGK", "Máy chiếu", "Phiếu học tập"],
+    "student": ["SGK", "Vở ghi", "Đồ dùng học tập"]
+  },
+  
+  "activities": [
+    {
+      "phase": "opening",
+      "name": "Khởi động",
+      "duration": 5,
+      "goal": "Tạo hứng thú, kết nối với bài học",
+      "content": "Đặt câu hỏi gợi mở, xem video ngắn",
+      "product": "Câu trả lời của HS, tình huống học tập",
+      "organization": {
+        "teacher": "Đặt câu hỏi, chiếu video",
+        "student": "Suy nghĩ, trả lời"
+      }
+    },
+    {
+      "phase": "knowledge_formation",
+      "name": "Hình thành kiến thức mới",
+      "duration": 20,
+      "goal": "Học sinh tiếp thu kiến thức mới",
+      "content": "Nghiên cứu SGK, thảo luận nhóm",
+      "product": "Phiếu học tập, kết quả thảo luận",
+      "organization": {
+        "teacher": "Hướng dẫn, quan sát, hỗ trợ",
+        "student": "Đọc SGK, thảo luận nhóm, báo cáo"
+      }
+    },
+    {
+      "phase": "practice",
+      "name": "Luyện tập",
+      "duration": 15,
+      "goal": "Củng cố kiến thức, rèn kỹ năng",
+      "content": "Bài tập, thực hành",
+      "product": "Đáp án bài tập, kết quả thực hành",
+      "organization": {
+        "teacher": "Giao bài, hướng dẫn, đánh giá",
+        "student": "Làm bài, trao đổi, chữa bài"
+      }
+    },
+    {
+      "phase": "application",
+      "name": "Vận dụng",
+      "duration": 5,
+      "goal": "Áp dụng kiến thức vào thực tiễn",
+      "content": "Tình huống thực tế, bài về nhà",
+      "product": "Giải pháp, bài báo cáo",
+      "organization": {
+        "teacher": "Giao nhiệm vụ, hướng dẫn",
+        "student": "Nhận nhiệm vụ, thực hiện ở nhà"
+      }
+    }
+  ]
+}`;
+
+// Interface cho Lesson Plan constraints
+export interface LessonPlanConstraints {
+  subject: string;
+  grade: number;
+  topic: string;
+  duration?: number;  // 45, 90, 135 phút
+  level?: 'primary' | 'secondary' | 'highschool';  // Tiểu học / THCS / THPT
+  objectives?: string[];  // Mục tiêu do GV nhập
+  documentContext?: string;  // Nội dung SGK để tham khảo
+}
+
+// Interface cho output
+export interface LessonPlanActivity {
+  phase: 'opening' | 'knowledge_formation' | 'practice' | 'application';
+  name: string;
+  duration: number;
+  goal: string;
+  content: string;
+  product: string;
+  organization: {
+    teacher: string;
+    student: string;
+  };
+}
+
+export interface LessonPlanOutput {
+  version: string;
+  title: string;
+  subject: string;
+  grade: number;
+  duration: number;
+  policyRef: string;
+  objectives: {
+    knowledge: string[];
+    competencies: {
+      general: string[];
+      specific: string[];
+    };
+    qualities: string[];
+  };
+  materials: {
+    teacher: string[];
+    student: string[];
+  };
+  activities: LessonPlanActivity[];
+}
+
+/**
+ * Sinh Kế hoạch Bài dạy với policy context từ API
+ * Chú thích: Dùng policy pack từ CV 5512 (THCS/THPT) hoặc CV 2345+1001 (Tiểu học)
+ */
+export async function generateLessonPlanWithPolicy(
+  constraints: LessonPlanConstraints
+): Promise<{ lessonPlan: LessonPlanOutput; metadata: GenerationMetadata }> {
+  // 1. Xác định mode dựa trên cấp học
+  const isPrimary = constraints.level === 'primary' || constraints.grade <= 5;
+  const taskType = 'lessonplan';
+  const assessmentType = isPrimary ? 'lesson_plan_primary' : 'lesson_plan';
+
+  // 2. Fetch policy context từ API
+  let policyContext: PolicyContext;
+  try {
+    policyContext = await fetchPolicyContext(taskType, {
+      grade: constraints.grade,
+      subject: constraints.subject,
+      assessmentType,
+    });
+    console.info('[generateLessonPlanWithPolicy] Policy loaded:', {
+      policyRefs: policyContext.policyRefs,
+      policyVersion: policyContext.policyVersion,
+    });
+  } catch (err) {
+    // Fallback: sử dụng policy mặc định nếu API chưa có
+    console.warn('[generateLessonPlanWithPolicy] Fallback to default policy:', err);
+    policyContext = {
+      policyText: isPrimary
+        ? `## CẤU TRÚC KHBD TIỂU HỌC THEO CV 2345 + CV 1001
+- 4 hoạt động: Mở đầu, Hình thành KT, Luyện tập, Vận dụng
+- Mục tiêu: Kiến thức + Năng lực (chung, đặc thù) + Phẩm chất
+- Lấy học sinh làm trung tâm, phân hóa đối tượng`
+        : `## CẤU TRÚC KHBD THCS/THPT THEO CV 5512
+- 4 hoạt động: Khởi động, Hình thành KT mới, Luyện tập, Vận dụng
+- Mỗi HĐ có: Mục tiêu, Nội dung, Sản phẩm, Tổ chức thực hiện
+- Mục tiêu: Kiến thức + Năng lực (chung, đặc thù) + Phẩm chất`,
+      constraints: {},
+      questionTypes: {},
+      schemaHints: LESSONPLAN_SCHEMA_HINT,
+      policyRefs: isPrimary ? ['cv2345-2021', 'cv1001-2025'] : ['cv5512-2020'],
+      policyVersion: isPrimary ? 'pack-lessonplan-primary-v1' : 'pack-lessonplan-5512-v1',
+    };
+  }
+
+  // 3. Build system prompt
+  const systemPrompt = buildLessonPlanSystemPrompt(policyContext.policyText);
+
+  // 4. Build user prompt
+  const documentSection = constraints.documentContext
+    ? `
+TÀI LIỆU NGUỒN (SGK):
+---
+${constraints.documentContext.slice(0, 30000)}
+---
+Dựa trên nội dung SGK trên để xây dựng hoạt động học tập phù hợp.
+`
+    : '';
+
+  const objectivesSection = constraints.objectives?.length
+    ? `
+MỤC TIÊU DO GIÁO VIÊN ĐỀ XUẤT:
+${constraints.objectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}
+`
+    : '';
+
+  const userPrompt = `${documentSection}${objectivesSection}
+Môn học: ${constraints.subject}
+Lớp: ${constraints.grade}
+Tên bài / Chủ đề: ${constraints.topic}
+Thời lượng: ${constraints.duration || 45} phút
+Cấp học: ${isPrimary ? 'Tiểu học' : constraints.grade <= 9 ? 'THCS' : 'THPT'}
+
+Yêu cầu:
+1. Tạo KHBD hoàn chỉnh với 4 hoạt động
+2. Phân bổ thời lượng hợp lý cho từng hoạt động
+3. Mục tiêu rõ ràng, đo lường được
+4. Hoạt động cụ thể, thực thi được
+${constraints.documentContext ? '5. Nội dung bám sát SGK đã cung cấp' : ''}
+
+Schema mẫu:
+${LESSONPLAN_SCHEMA_HINT}
+
+Trả về JSON theo schema LessonPlanOutput.`;
+
+  // 5. Call AI
+  const lessonPlan = await callAIJson<LessonPlanOutput>({
+    systemPrompt,
+    userPrompt,
+  });
+
+  // 6. Return with metadata
+  const aiConfig = getAIConfig();
+  return {
+    lessonPlan,
+    metadata: {
+      policyRefs: policyContext.policyRefs,
+      policyVersion: policyContext.policyVersion,
+      promptVersion: 'lessonplan-agent-v1.0.0',
+      model: aiConfig.modelId || undefined,
+      generatedAt: new Date().toISOString(),
+    },
+  };
+}
+
+/**
+ * Legacy function - sinh KHBD đơn giản (không có policy context)
+ * @deprecated Dùng generateLessonPlanWithPolicy thay thế
+ */
+export async function generateLessonPlanFrontend(
+  constraints: LessonPlanConstraints
+): Promise<LessonPlanOutput> {
+  const result = await generateLessonPlanWithPolicy(constraints);
+  return result.lessonPlan;
+}

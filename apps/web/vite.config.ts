@@ -8,24 +8,100 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'prompt', // Hiển thị popup hỏi user thay vì tự update
-            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
             manifest: {
                 name: 'Kiến Tạo Việt - Trợ Lý Soạn Đề',
                 short_name: 'Kiến Tạo Việt',
                 description: 'Tạo Ma trận đề kiểm tra và Đề thi theo Công văn 7991/BGDĐT-GDTrH',
-                theme_color: '#ffffff',
+                theme_color: '#6366f1',
+                background_color: '#ffffff',
+                display: 'standalone',
+                start_url: '/',
+                scope: '/',
+                orientation: 'portrait-primary',
+                categories: ['education', 'productivity'],
                 icons: [
                     {
                         src: 'pwa-192x192.png',
                         sizes: '192x192',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     },
                     {
                         src: 'pwa-512x512.png',
                         sizes: '512x512',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any maskable'
+                    }
+                ],
+                shortcuts: [
+                    {
+                        name: 'Tạo đề thi',
+                        short_name: 'Tạo đề',
+                        url: '/create-exam',
+                        icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+                    },
+                    {
+                        name: 'Thư viện',
+                        short_name: 'Thư viện',
+                        url: '/libraries',
+                        icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
                     }
                 ]
+            },
+            // Chú thích: Workbox caching strategies cho offline support
+            workbox: {
+                // Cache static assets
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                // Runtime caching cho API calls
+                runtimeCaching: [
+                    {
+                        // Cache API responses
+                        urlPattern: /^https:\/\/api\..*/i,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'api-cache',
+                            expiration: {
+                                maxEntries: 100,
+                                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            }
+                        }
+                    },
+                    {
+                        // Cache images
+                        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'images-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                            }
+                        }
+                    },
+                    {
+                        // Cache fonts
+                        urlPattern: /\.(?:woff|woff2|ttf|eot)$/,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'fonts-cache',
+                            expiration: {
+                                maxEntries: 20,
+                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                            }
+                        }
+                    }
+                ],
+                // Navigations to cache
+                navigateFallback: 'index.html',
+                navigateFallbackDenylist: [/^\/api/]
+            },
+            // Dev options
+            devOptions: {
+                enabled: false // Enable for dev testing: true
             }
         })
     ],

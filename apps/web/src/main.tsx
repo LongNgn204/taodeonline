@@ -9,12 +9,18 @@ import './index.css';
 globalThis.Buffer = Buffer;
 
 import UpdateNotification from './components/UpdateNotification';
+import { NotificationProvider } from './lib/notifications';
+import { OnboardingProvider } from './components/OnboardingTour';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <BrowserRouter>
-            <App />
-            <UpdateNotification />
+            <NotificationProvider>
+                <OnboardingProvider>
+                    <App />
+                    <UpdateNotification />
+                </OnboardingProvider>
+            </NotificationProvider>
         </BrowserRouter>
     </React.StrictMode>
 );
